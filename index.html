@@ -1007,11 +1007,23 @@ function grantParadiseBaitGiftV3(p){
   }catch(e){}
 }
 
+function reclaimParadiseBaitV1(){
+  try{
+    Object.values(store.profiles||{}).forEach(p=>{
+      if(!p || p.baitReclaimedV1) return;
+      if(p.consumables) p.consumables.paradiseBait = 0;
+      p.baitReclaimedV1 = true;
+    });
+    saveStore();
+  }catch(e){}
+}
+
 let store = loadStore();
 let profile = store.activeId ? store.profiles[store.activeId] : null;
 grantParadiseBaitGiftV1(profile);
 grantParadiseBaitGiftV2(profile);
 grantParadiseBaitGiftV3(profile);
+reclaimParadiseBaitV1();
 let localFeed = (()=>{ try{ return JSON.parse(localStorage.getItem('fishlog_feed_v1'))||[]; }catch(e){ return []; } })();
 function pushLocalFeed(entry){
   localFeed.unshift(entry); localFeed = localFeed.slice(0,30);
