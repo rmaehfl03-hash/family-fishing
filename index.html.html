@@ -1,0 +1,1941 @@
+<title>우리 가족 낚시일지</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#141a2b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="가족낚시게임">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#141a2b; --bg-deep:#0c0f1c;
+  --panel:#1d2438; --panel-raised:#262f48; --panel-line:rgba(255,255,255,.09);
+  --ink:#f4f1e6; --ink-soft:#9aa2c0;
+  --gold:#ffce54; --gold-deep:#c98a1f;
+  --coral:#ef7d5c; --coral-deep:#c85a3c;
+  --teal:#4fd6c4; --violet:#8f7fd6;
+  --shadow:rgba(0,0,0,.5);
+  --g-common:#b7bdd6; --g-rare:#5ab4e0; --g-epic:#b28ce8; --g-legendary:#ffce54; --g-secret:#ff8a65; --g-primordial:#fff2c9;
+  --white:#ffffff;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Gowun Dodum', 'Malgun Gothic', sans-serif;
+  display:flex; justify-content:center; min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+.tabular{ font-family:'JetBrains Mono', monospace; font-variant-numeric:tabular-nums; }
+h1,h2,h3,.display{ font-family:'Jua', sans-serif; text-wrap:balance; font-weight:400; }
+button{ font-family:inherit; }
+::selection{ background:var(--gold); color:#1a1a2a; }
+
+#frame{
+  width:100%; max-width:460px; min-height:100vh; background:var(--bg);
+  display:flex; flex-direction:column; position:relative;
+  box-shadow:0 0 60px var(--shadow);
+}
+
+/* header */
+#topbar{
+  position:sticky; top:0; z-index:20; background:rgba(20,26,43,.92); backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--panel-line); padding:calc(12px + env(safe-area-inset-top)) 16px 10px;
+}
+#topbar-row{ display:flex; align-items:center; gap:10px; }
+#avatar-btn{
+  width:44px; height:44px; border-radius:50%; border:2px solid var(--gold);
+  background:var(--panel-raised); color:var(--gold); font-family:'Jua',sans-serif; font-size:18px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer;
+}
+#who{ flex:1; min-width:0; }
+#who-name{ font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px; }
+#title-tag{ font-size:9.5px; font-weight:400; color:var(--gold); background:rgba(255,206,84,.15); padding:1px 6px; border-radius:8px; }
+#title-tag:empty{ display:none; }
+#sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--ink-soft); flex-shrink:0; }
+#sync-dot.on{ background:var(--teal); box-shadow:0 0 0 3px rgba(79,214,196,.25); }
+#lv-row{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-soft); margin-top:2px; }
+#exp-track{ flex:1; height:5px; background:rgba(255,255,255,.08); border-radius:3px; overflow:hidden; }
+#exp-fill{ height:100%; background:linear-gradient(90deg, var(--gold), var(--coral)); border-radius:3px; transition:width .4s; }
+#points-box{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.coin{ flex-shrink:0; }
+#points-val{ font-size:17px; font-weight:700; color:var(--gold); }
+
+#region-tabs{ display:flex; gap:6px; margin-top:10px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+.region-tab{
+  flex:0 0 auto; width:64px; text-align:center; padding:6px 4px 7px; border-radius:10px;
+  border:1px solid var(--panel-line); background:var(--panel); cursor:pointer; color:var(--ink-soft);
+  font-size:11px; position:relative; transition:transform .12s;
+}
+.region-tab.locked{ opacity:.6; cursor:default; }
+.region-tab.active{ background:var(--rt-accent, var(--coral)); color:#1a1a2a; border-color:transparent; }
+.region-tab .rt-name{ font-weight:700; display:block; font-size:12.5px; }
+.region-tab .rt-sub{ font-size:9px; opacity:.85; }
+
+/* main content */
+#content{ flex:1; padding:16px; padding-bottom:96px; }
+.card{ background:var(--panel); border:1px solid var(--panel-line); border-radius:16px; padding:16px; }
+.section-title{ font-size:13px; letter-spacing:.04em; color:var(--ink-soft); text-transform:uppercase; margin:22px 0 10px; }
+.section-title:first-child{ margin-top:0; }
+
+/* fishing scene */
+#scene{
+  border-radius:18px; padding:22px 16px 18px; text-align:center; position:relative; overflow:hidden; min-height:280px;
+  background:var(--scene-bg); border:1px solid var(--panel-line);
+}
+.mountains{ position:absolute; left:0; right:0; bottom:0; width:100%; height:68%; pointer-events:none; }
+.water-band{ position:absolute; left:0; right:0; bottom:0; height:18%; pointer-events:none;
+  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.30)); }
+.sky-glow{ position:absolute; width:46px; height:46px; margin:-23px 0 0 -23px; border-radius:50%; opacity:.92; pointer-events:none; }
+.star{ position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:.6; pointer-events:none; animation:twinkleStar 3s ease-in-out infinite; }
+@keyframes twinkleStar{ 0%,100%{ opacity:.2; } 50%{ opacity:.9; } }
+.glow-dot{ position:absolute; width:3px; height:3px; border-radius:50%; pointer-events:none; animation:tw 2.6s ease-in-out infinite; }
+@keyframes tw{ 0%,100%{ opacity:.2; transform:scale(.8); } 50%{ opacity:1; transform:scale(1.5); } }
+.abyss-vignette{ position:absolute; inset:0; pointer-events:none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(120,160,220,.16), transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(0,0,0,.5), transparent 60%); }
+.boat{ position:absolute; right:5%; bottom:16%; width:56px; height:auto; pointer-events:none; filter:drop-shadow(0 3px 5px rgba(0,0,0,.45)); overflow:visible; }
+#rod-arm{ transform-origin:30px 26px; }
+#rod-arm.casting{ animation:rodSwing .55s cubic-bezier(.32,0,.2,1); }
+@keyframes rodSwing{ 0%{ transform:rotate(0deg); } 22%{ transform:rotate(-26deg); } 68%{ transform:rotate(16deg); } 100%{ transform:rotate(0deg); } }
+@media (prefers-reduced-motion: reduce){ #rod-arm.casting{ animation:none; } }
+.sub-anchor{ position:absolute; left:44%; top:0; width:58px; pointer-events:none; }
+.submersible{ width:100%; height:auto; filter:drop-shadow(0 3px 8px rgba(0,0,0,.5)); }
+@media (prefers-reduced-motion: reduce){ .star,.glow-dot{ animation:none; opacity:.6; } }
+
+#cast-svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+#splash-layer{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+.splash-ring{ position:absolute; width:6px; height:6px; margin:-3px 0 0 -3px; border:2px solid rgba(255,255,255,.85); border-radius:50%; animation:splashring .9s ease-out forwards; }
+.splash-ring.loop{ animation:splashring 2s ease-out infinite; }
+@keyframes splashring{ from{ width:6px;height:6px;margin:-3px 0 0 -3px; opacity:.85; } to{ width:60px; height:60px; margin:-30px 0 0 -30px; opacity:0; } }
+.droplet{ position:absolute; width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,.9); animation:drop .5s ease-out forwards; }
+@keyframes drop{ from{ transform:translate(0,0); opacity:1; } to{ transform:translate(var(--dx),var(--dy)); opacity:0; } }
+.bubble{ position:absolute; width:5px; height:5px; border-radius:50%; background:rgba(200,230,255,.55); animation:bubbleUp 1.6s ease-out forwards; }
+@keyframes bubbleUp{ from{ transform:translateY(0); opacity:.8; } to{ transform:translateY(-70px); opacity:0; } }
+
+.scene-fg{ position:relative; z-index:2; }
+#scene-region{ font-size:12px; color:rgba(244,241,230,.75); text-shadow:0 1px 6px rgba(0,0,0,.55); }
+#scene-title{ font-size:27px; margin:2px 0 14px; color:var(--white); text-shadow:0 2px 8px rgba(0,0,0,.55); }
+#scene-status{ font-size:14px; min-height:20px; color:rgba(244,241,230,.9); margin-bottom:10px; text-shadow:0 1px 6px rgba(0,0,0,.55); }
+
+.rig{ position:absolute; left:-4px; bottom:-6px; width:100px; height:auto; pointer-events:none; z-index:1; filter:drop-shadow(0 4px 6px rgba(0,0,0,.45)); }
+.rig svg{ width:100%; height:auto; display:block; }
+
+#tension-wrap{ display:none; margin-top:6px; position:relative; z-index:2; }
+#tension-wrap.show{ display:block; }
+#tension-track{ position:relative; height:22px; background:rgba(0,0,0,.4); border-radius:11px; overflow:hidden; border:1px solid rgba(255,255,255,.3); }
+.zone{ position:absolute; top:0; bottom:0; }
+.zone.good{ background:rgba(255,206,84,.42); }
+.zone.perfect{ background:var(--gold); }
+#marker{ position:absolute; top:-3px; width:4px; height:28px; background:var(--coral); border-radius:2px; box-shadow:0 0 0 2px rgba(0,0,0,.5); }
+
+#cast-btn, #hook-btn{
+  margin-top:16px; border:none; border-radius:14px; padding:14px 20px; width:100%;
+  font-family:'Jua',sans-serif; font-size:17px; cursor:pointer; letter-spacing:.02em;
+  background:linear-gradient(180deg, var(--coral), var(--coral-deep)); color:var(--white); transition:transform .08s, opacity .2s;
+  box-shadow:0 4px 0 var(--coral-deep), 0 6px 14px rgba(0,0,0,.35);
+}
+#hook-btn{ background:linear-gradient(180deg, var(--gold), var(--gold-deep)); box-shadow:0 4px 0 var(--gold-deep), 0 6px 14px rgba(0,0,0,.35); color:#241a08; }
+#cast-btn:active, #hook-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--coral-deep); }
+#cast-btn:disabled{ opacity:.45; cursor:default; }
+#odds-btn{ margin-top:10px; border:none; color:#fff; font-size:11.5px; cursor:pointer; background:rgba(0,0,0,.28); padding:5px 12px; border-radius:20px; position:relative; z-index:2; }
+
+/* fish grid / dex */
+.fish-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; position:relative; z-index:1; }
+.fish-card{ background:rgba(255,255,255,.14); backdrop-filter:blur(2px); border:1px solid rgba(255,255,255,.25); border-radius:12px; padding:10px 6px 8px; text-align:center; position:relative; }
+.fish-card .fic{ width:100%; max-width:58px; height:auto; margin:0 auto 6px; display:block; }
+.fish-card .fname{ font-size:11px; font-weight:700; line-height:1.25; min-height:28px; display:flex; align-items:center; justify-content:center; color:#fff; }
+.fish-card .fpts{ font-size:10px; color:rgba(255,255,255,.75); margin-top:2px; }
+.fish-card .fcnt{ position:absolute; top:5px; right:6px; font-size:9px; background:var(--gold); color:#241a08; font-weight:700; border-radius:8px; padding:1px 5px; }
+.fish-card.uncaught .fname{ color:rgba(255,255,255,.55); }
+.fish-card.uncaught .fic{ opacity:.4; filter:grayscale(1) brightness(1.4); }
+.grade-strip{ height:3px; border-radius:2px; margin-bottom:6px; }
+.progress-row{ display:flex; align-items:center; gap:8px; margin:4px 0 16px; position:relative; z-index:1; }
+.progress-track{ flex:1; height:8px; border-radius:5px; background:rgba(255,255,255,.15); overflow:hidden; }
+.progress-fill{ height:100%; background:linear-gradient(90deg,var(--gold),var(--coral)); }
+.progress-fill.fam{ background:linear-gradient(90deg,var(--teal),var(--violet)); }
+.dex-dual{ display:flex; gap:14px; margin:4px 0 14px; position:relative; z-index:1; }
+.dex-dual-item{ flex:1; }
+.ddi-label{ font-size:10.5px; color:rgba(255,255,255,.8); margin-bottom:4px; }
+.dex-dual .tabular{ font-size:11px; color:rgba(255,255,255,.85); margin-top:3px; }
+.progress-row .tabular{ color:var(--ink-soft); }
+.dex-ocean .progress-row .tabular{ color:rgba(255,255,255,.85); }
+.dex-tabs{ display:flex; gap:6px; margin-bottom:12px; }
+.dex-tab{ flex:1; text-align:center; padding:6px; border-radius:8px; font-size:11px; border:1px solid var(--panel-line); background:var(--panel); cursor:pointer; color:var(--ink-soft); }
+.dex-tab.active{ background:var(--teal); color:#0c2c26; border-color:transparent; font-weight:700; }
+.dex-scope-toggle{ display:flex; gap:6px; margin-bottom:10px; font-size:11px; position:relative; z-index:1; }
+.pill-toggle{ padding:5px 10px; border-radius:20px; border:1px solid var(--panel-line); background:var(--panel); cursor:pointer; color:var(--ink-soft); }
+.pill-toggle.active{ background:var(--ink); color:#1a1a2a; border-color:var(--ink); }
+.dex-ocean .pill-toggle{ background:rgba(0,0,0,.25); border-color:rgba(255,255,255,.25); color:rgba(255,255,255,.8); }
+.dex-ocean .pill-toggle.active{ background:#fff; color:#1a1a2a; }
+
+.dex-ocean{
+  position:relative; border-radius:18px; padding:16px; margin-bottom:16px; overflow:hidden;
+  background:linear-gradient(180deg, #bdeaf0 0%, #4fa6c9 40%, #1c5c86 72%, #0c2c4a 100%);
+  border:1px solid var(--panel-line);
+}
+.dex-ocean .rays{ position:absolute; inset:0; opacity:.3; pointer-events:none;
+  background:
+    linear-gradient(100deg, transparent 18%, rgba(255,255,255,.6) 22%, transparent 30%),
+    linear-gradient(100deg, transparent 45%, rgba(255,255,255,.45) 49%, transparent 57%),
+    linear-gradient(100deg, transparent 68%, rgba(255,255,255,.4) 72%, transparent 80%);
+}
+.amb-bubble{ position:absolute; bottom:-10px; border-radius:50%; background:rgba(255,255,255,.5); pointer-events:none; animation:ambBubble 6s linear infinite; }
+@keyframes ambBubble{ from{ transform:translateY(0); opacity:.7; } to{ transform:translateY(-280px); opacity:0; } }
+@media (prefers-reduced-motion: reduce){ .amb-bubble{ animation:none; opacity:0; } }
+
+/* shop */
+.shop-item{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--panel-line); }
+.shop-item:last-child{ border-bottom:none; }
+.shop-icon{ width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,.08); color:var(--gold); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:18px; }
+.shop-info{ flex:1; min-width:0; }
+.shop-name{ font-size:14px; font-weight:700; }
+.shop-desc{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; line-height:1.4; }
+.shop-buy{ flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.buy-btn{ border:none; border-radius:9px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer; background:linear-gradient(180deg,var(--gold),var(--gold-deep)); color:#241a08; white-space:nowrap; }
+.buy-btn.owned{ background:rgba(255,255,255,.10); color:var(--ink-soft); }
+.buy-btn.equipped{ background:linear-gradient(180deg,var(--teal),#2a9d8f); color:#062a24; }
+.buy-btn:disabled{ opacity:.45; cursor:default; }
+.price-tag{ font-size:11px; color:var(--ink-soft); }
+
+/* ranking */
+.rank-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--panel-line); }
+.rank-row:last-child{ border-bottom:none; }
+.rank-num{ width:22px; text-align:center; font-weight:700; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; }
+.rank-num.top{ color:var(--gold); }
+.rank-name{ flex:1; font-size:14px; font-weight:700; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.rank-sub{ font-size:10.5px; color:var(--ink-soft); font-weight:400; width:100%; }
+.rank-val{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--gold); }
+.feed-row{ display:flex; gap:10px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--panel-line); font-size:12px; }
+.feed-row:last-child{ border-bottom:none; }
+.feed-time{ color:var(--ink-soft); font-size:10px; width:38px; flex-shrink:0; font-family:'JetBrains Mono',monospace; }
+.grade-chip{ font-size:9.5px; padding:2px 6px; border-radius:20px; color:#1c2233; font-weight:700; letter-spacing:.02em; }
+
+/* bottom nav */
+#navbar{
+  position:sticky; bottom:0; z-index:20; background:rgba(20,26,43,.94); backdrop-filter:blur(6px); border-top:1px solid var(--panel-line);
+  display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+.nav-btn{ flex:1; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 0; cursor:pointer; color:var(--ink-soft); }
+.nav-btn.active{ color:var(--gold); }
+.nav-btn svg{ width:20px; height:20px; }
+.nav-btn span{ font-size:10.5px; }
+
+/* modal */
+#modal-layer{ position:fixed; inset:0; z-index:100; display:none; align-items:flex-end; justify-content:center; }
+#modal-layer.show{ display:flex; }
+#modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.6); }
+.sheet{ position:relative; width:100%; max-width:460px; background:var(--panel-raised); border-radius:20px 20px 0 0; padding:22px 20px calc(24px + env(safe-area-inset-bottom)); max-height:86vh; overflow-y:auto; border-top:1px solid var(--panel-line); }
+.sheet h2{ margin:0 0 4px; font-size:21px; color:var(--white); }
+.sheet .sub{ color:var(--ink-soft); font-size:12.5px; margin-bottom:16px; }
+.sheet input[type=text]{ width:100%; padding:12px; border-radius:10px; border:1px solid var(--panel-line); background:var(--bg); color:var(--ink); font-size:15px; font-family:inherit; }
+.sheet-close{ margin-top:16px; width:100%; padding:13px; border-radius:12px; border:none; background:linear-gradient(180deg,var(--gold),var(--gold-deep)); color:#241a08; font-weight:700; font-size:15px; cursor:pointer; }
+.sheet-close.ghost{ background:rgba(255,255,255,.08); color:var(--ink); margin-top:8px; }
+.profile-list{ display:flex; flex-direction:column; gap:8px; }
+.profile-row{ display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--panel-line); border-radius:12px; cursor:pointer; background:var(--bg); }
+.profile-row.active{ border-color:var(--gold); background:rgba(255,206,84,.10); }
+.profile-row .pname{ flex:1; font-weight:700; font-size:14px; }
+.profile-row .plv{ font-size:11px; color:var(--ink-soft); }
+.big-btn{ width:100%; padding:13px; border-radius:12px; border:1px dashed var(--panel-line); background:none; color:var(--ink-soft); font-size:13px; cursor:pointer; margin-top:4px; }
+
+.catch-fish-wrap{ text-align:center; padding:14px 0 6px; }
+.catch-fish-wrap .fic{ width:130px; height:auto; margin:0 auto 10px; }
+.sparkle-mark{ animation:sparkleTwinkle 1.3s ease-in-out infinite; transform-origin:center; transform-box:fill-box; }
+@keyframes sparkleTwinkle{ 0%,100%{ opacity:.15; transform:scale(.5); } 50%{ opacity:1; transform:scale(1.2); } }
+@media (prefers-reduced-motion: reduce){ .sparkle-mark{ animation:none; opacity:.7; } }
+.catch-name{ font-size:23px; margin:2px 0 6px; color:var(--white); }
+.catch-pts{ font-size:15px; color:var(--gold); font-weight:700; }
+.perfect-badge{ display:inline-block; margin-top:8px; background:linear-gradient(180deg,var(--gold),var(--gold-deep)); color:#241a08; font-size:11px; padding:4px 10px; border-radius:20px; font-weight:700; }
+.fact-box{ margin-top:12px; background:rgba(255,255,255,.06); border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.55; color:var(--ink-soft); text-align:left; }
+
+.toast{ position:fixed; left:50%; bottom:110px; transform:translateX(-50%); background:var(--panel-raised); border:1px solid var(--panel-line); color:var(--ink); padding:10px 18px; border-radius:20px; font-size:13px; z-index:200; opacity:0; pointer-events:none; transition:opacity .25s, bottom .25s; }
+.toast.show{ opacity:1; bottom:130px; }
+
+.celebrate{ position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center; background:radial-gradient(ellipse at center, rgba(30,20,50,.7), rgba(5,5,15,.92)); }
+.celebrate.show{ display:flex; }
+.celebrate-card{ text-align:center; color:var(--white); padding:20px; }
+.celebrate-card .fic{ width:170px; height:auto; margin:0 auto 14px; }
+.celebrate-card h2{ font-size:29px; margin:0 0 6px; color:var(--gold); }
+.celebrate-card p{ font-size:13px; opacity:.85; max-width:280px; margin:6px auto 0; line-height:1.5; }
+
+.odds-table{ width:100%; border-collapse:collapse; font-size:12px; }
+.odds-table td{ padding:6px 4px; border-bottom:1px solid var(--panel-line); }
+.odds-table td:last-child{ text-align:right; font-family:'JetBrains Mono',monospace; }
+
+.lock-note{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+::-webkit-scrollbar{ width:0; height:0; }
+</style>
+
+<div id="frame">
+  <div id="topbar">
+    <div id="topbar-row">
+      <button id="avatar-btn"></button>
+      <div id="who">
+        <div id="who-name"><span id="sync-dot"></span><span id="name-text">-</span><span id="title-tag"></span></div>
+        <div id="lv-row"><span id="lv-text" class="tabular">Lv.1</span><div id="exp-track"><div id="exp-fill" style="width:0%"></div></div></div>
+      </div>
+      <div id="points-box">
+        <svg class="coin" width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="#ffce54" stroke="#c98a1f" stroke-width="1.4"/><text x="9" y="12.5" text-anchor="middle" font-size="9" font-family="Jua" fill="#8a5a12">P</text></svg>
+        <div id="points-val" class="tabular">0</div>
+      </div>
+    </div>
+    <div id="region-tabs"></div>
+  </div>
+
+  <div id="content"></div>
+
+  <div id="navbar">
+    <button class="nav-btn" data-tab="fish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12c4-5 9-6 13-3M3 12c4 5 9 6 13 3M16 9c2 0 4.5 1.2 5.5 3-1 1.8-3.5 3-5.5 3" /><circle cx="16.3" cy="10.6" r=".6" fill="currentColor" stroke="none"/></svg><span>낚시</span></button>
+    <button class="nav-btn" data-tab="shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l1.5-4h13L20 8M4 8h16M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8M9 12a3 3 0 006 0"/></svg><span>상점</span></button>
+    <button class="nav-btn" data-tab="dex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15.5H6.5A2.5 2.5 0 004 16"/><path d="M4 16v2.5A2.5 2.5 0 006.5 21H20"/></svg><span>도감</span></button>
+    <button class="nav-btn" data-tab="rank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10v5a5 5 0 01-10 0V4z"/><path d="M7 5H4v2a3 3 0 003 3M17 5h3v2a3 3 0 01-3 3M9 17h6M11 14v3h2v-3M8 20h8"/></svg><span>랭킹</span></button>
+  </div>
+</div>
+
+<div id="modal-layer"><div id="modal-backdrop"></div><div class="sheet" id="sheet"></div></div>
+<div class="celebrate" id="celebrate"><div class="celebrate-card" id="celebrate-card"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- DATA ---------- */
+const REGIONS = [
+  {id:'lake', name:'호수', unlockLv:1, accent:'#ef9169',
+    sky:['#f6c58a','#ef9169','#7a5a8a','#362f5c'], sun:{color:'#ffe3a0', glow:'#ffcf5c'}, stars:0.1,
+    weights:{common:74.85,rare:18,epic:6,legendary:1,secret:0.15,primordial:0}},
+  {id:'river', name:'강', unlockLv:10, requireRegion:'lake', requireCount:15, accent:'#5ab4e0',
+    sky:['#bcd9ea','#7fa8c9','#4a5f8f','#242149'], sun:{color:'#eef3f2', glow:'#cfe0ee'}, stars:0.35,
+    weights:{common:61.9,rare:24,epic:11,legendary:2.5,secret:0.4,primordial:0.1}},
+  {id:'sea', name:'바다', unlockLv:25, requireRegion:'river', requireCount:20, accent:'#4fd6c4',
+    sky:['#6fa9c9','#3f6f9e','#26467a','#12183a'], sun:{color:'#f4f1e6', glow:'#cfe0ee'}, stars:0.65,
+    weights:{common:50,rare:26,epic:17,legendary:5.5,secret:1,primordial:0.5}},
+  {id:'abyss', name:'심해', unlockLv:40, requireRegion:'sea', requireDexCount:8, accent:'#8f7fd6',
+    sky:['#1a2350','#12193c','#0a0f28','#03050f'], sun:null, stars:1,
+    weights:{common:35.5,rare:25,epic:22,legendary:12,secret:4,primordial:1.5}},
+  {id:'polar', name:'극지', unlockLv:60, requireRegion:'abyss', requireDexCount:14, accent:'#8fd6e8',
+    sky:['#e8f4f8','#b8dce8','#5a8ab0','#2a4a68'], sun:{color:'#fff6e0', glow:'#cfe8f0'}, stars:0.2,
+    weights:{common:30.5,rare:25,epic:21,legendary:14,secret:7,primordial:2.5}},
+  {id:'paradise', name:'낙원', unlockLv:90, requireRegion:'polar', requireDexCount:19, accent:'#e8a8d9',
+    sky:['#fff0d9','#ffd9a0','#f2a8d9','#8f6ab8'], sun:{color:'#fff6d8', glow:'#ffe08a'}, stars:0.5,
+    weights:{common:0,rare:0,epic:0,legendary:0,secret:0,primordial:100},
+    needsBait:true},
+];
+const GRADES = ['common','rare','epic','legendary','secret','primordial'];
+const GRADE_LABEL = {common:'커먼',rare:'레어',epic:'에픽',legendary:'전설',secret:'비밀',primordial:'태초'};
+const GRADE_VAR = {common:'--g-common',rare:'--g-rare',epic:'--g-epic',legendary:'--g-legendary',secret:'--g-secret',primordial:'--g-primordial'};
+
+const FISH = [
+  {id:'crucian', name:'붕어', region:'lake', grade:'common', points:10},
+  {id:'minnow', name:'피라미', region:'lake', grade:'common', points:10},
+  {id:'bullhead', name:'동자개', region:'lake', grade:'common', points:10,
+    fact:'동자개는 노르스름한 몸빛의 작은 메기 종류로, 손으로 잡으면 가슴지느러미를 비벼 "빽빽" 소리를 내는 것으로 유명해요.'},
+  {id:'carp', name:'잉어', region:'lake', grade:'rare', points:30},
+  {id:'silvercarp', name:'은빛 향어', region:'lake', grade:'rare', points:30},
+  {id:'catfish', name:'메기', region:'lake', grade:'epic', points:160},
+  {id:'softshellturtle', name:'자라', region:'lake', grade:'legendary', points:600,
+    fact:'자라는 등딱지가 딱딱한 다른 거북과 달리 가죽처럼 말랑한 등딱지를 가진 민물 거북이에요. 길게 튀어나온 코로 물 밖에 코끝만 내밀고 숨을 쉴 수 있어요.'},
+  {id:'goldcarp', name:'황금잉어', region:'lake', grade:'secret', points:1000},
+
+  {id:'sweetfish', name:'은어', region:'river', grade:'common', points:15},
+  {id:'darkchub', name:'갈겨니', region:'river', grade:'common', points:15},
+  {id:'chub', name:'누치', region:'river', grade:'common', points:15,
+    fact:'누치는 입술이 두툼하고 주둥이가 아래를 향해 있어서, 강바닥을 훑으며 돌 틈에 숨은 작은 벌레를 찾아 먹어요.'},
+  {id:'mandarin', name:'쏘가리', region:'river', grade:'rare', points:45},
+  {id:'rainbowtrout', name:'무지개송어', region:'river', grade:'rare', points:45},
+  {id:'giantcatfish', name:'자이언트 메기', region:'river', grade:'epic', points:240},
+  {id:'hagfishking', name:'먹장어 대왕', region:'river', grade:'epic', points:240},
+  {id:'troutspirit', name:'산천어 정령', region:'river', grade:'legendary', points:800},
+  {id:'sturgeon', name:'철갑상어', region:'river', grade:'secret', points:1800,
+    fact:'철갑상어는 1억 년 넘게 모습이 거의 변하지 않은 살아있는 화석이에요. 비늘 대신 단단한 골판이 몸을 줄지어 감싸고 있어요.'},
+  {id:'pirarucu', name:'피라루쿠', region:'river', grade:'primordial', points:4000,
+    fact:'피라루쿠(아라파이마)는 아마존강에 사는 세계 최대급 민물고기로, 몸길이가 3m 가까이 자라기도 해요. 아가미뿐 아니라 부레로도 숨을 쉴 수 있어서 가끔 수면 위로 올라와 공기를 들이마셔요.'},
+
+  {id:'mackerel', name:'고등어', region:'sea', grade:'common', points:20},
+  {id:'jackmackerel', name:'전갱이', region:'sea', grade:'common', points:20},
+  {id:'shad', name:'전어', region:'sea', grade:'common', points:20,
+    fact:'전어는 가을이 제철인 물고기로, "전어 굽는 냄새에 집 나간 며느리도 돌아온다"는 옛말이 있을 만큼 고소한 맛으로 유명해요.'},
+  {id:'flounder', name:'광어', region:'sea', grade:'rare', points:60},
+  {id:'seabream', name:'도미', region:'sea', grade:'rare', points:60},
+  {id:'tuna', name:'참치', region:'sea', grade:'epic', points:360},
+  {id:'amberjack', name:'방어', region:'sea', grade:'epic', points:360},
+  {id:'marlin', name:'청새치', region:'sea', grade:'legendary', points:1100},
+  {id:'mahi', name:'은빛 만새기', region:'sea', grade:'legendary', points:1100},
+  {id:'greatwhite', name:'백상아리', region:'sea', grade:'secret', points:2400},
+  {id:'whaleshark', name:'고래상어', region:'sea', grade:'primordial', points:6000,
+    fact:'고래상어는 세상에서 가장 큰 물고기예요. 몸집은 어마어마하지만 성격이 온순해서 작은 플랑크톤과 크릴만 걸러 먹고 살아요.'},
+
+  {id:'anglerfish', name:'아귀', region:'abyss', grade:'common', points:30},
+  {id:'deepeel', name:'통안어', region:'abyss', grade:'common', points:30,
+    fact:'통안어는 투명한 돔 모양의 머리 속에 관 모양의 눈이 들어있어서 눈을 위로 돌려 머리 위를 지나가는 먹이의 그림자를 놓치지 않아요.'},
+  {id:'lanternfish', name:'샛비늘치', region:'abyss', grade:'common', points:30,
+    fact:'샛비늘치는 몸에 있는 발광기관으로 빛을 내는 심해어예요. 낮에는 깊은 곳에 숨어 있다가 밤이 되면 먹이를 찾아 얕은 곳까지 올라와요.'},
+  {id:'giantsquidjr', name:'대왕오징어 새끼', region:'abyss', grade:'rare', points:90},
+  {id:'vampiresquid', name:'흡혈오징어', region:'abyss', grade:'rare', points:95,
+    fact:'흡혈오징어는 이름과 달리 피를 빨지 않는 온순한 심해 생물이에요. 위협을 느끼면 우산처럼 몸을 뒤집어 가시 돋친 팔로 온몸을 감싸요.'},
+  {id:'glowanglerking', name:'우무문어', region:'abyss', grade:'epic', points:520},
+  {id:'frilledshark', name:'주름상어', region:'abyss', grade:'epic', points:540,
+    fact:'주름상어는 뱀장어처럼 길쭉한 몸과 300개에 가까운 뾰족한 이빨을 가진 원시적인 상어예요. 아가미가 주름처럼 겹쳐 있어 이런 이름이 붙었어요.'},
+  {id:'coelacanth', name:'실러캔스', region:'abyss', grade:'legendary', points:1400,
+    fact:'실러캔스는 공룡보다도 먼저 지구에 나타나 "살아있는 화석"이라 불려요. 한동안 멸종한 줄 알았지만 1938년 남아프리카 앞바다에서 다시 발견됐어요.'},
+  {id:'goblinshark', name:'마귀상어', region:'abyss', grade:'legendary', points:1450,
+    fact:'마귀상어는 길게 튀어나온 주둥이와, 먹이를 잡을 때 턱이 순간적으로 앞으로 튀어나오는 것으로 유명해요. 아주 오래된 계통이라 "살아있는 화석"이라 불리기도 해요.'},
+  {id:'lionmane', name:'사자갈기 해파리', region:'abyss', grade:'legendary', points:1350,
+    fact:'사자갈기 해파리는 세상에서 가장 큰 해파리예요. 촉수 길이가 30m를 넘기도 해서, 사자의 풍성한 갈기에 빗대어 이름이 붙었어요.'},
+  {id:'fangtooth', name:'산갈치', region:'abyss', grade:'secret', points:3000,
+    fact:'산갈치는 뼈를 가진 물고기 중 가장 길게 자라는 종으로 몸길이가 11m에 달하기도 해요. 해안에 떠밀려온 모습 때문에 옛날부터 "용궁의 사자"라는 전설이 따라다녀요.'},
+  {id:'giantsquid', name:'대왕오징어', region:'abyss', grade:'secret', points:3200,
+    fact:'대왕오징어는 실제로 존재하는 심해 생물이지만 너무 깊은 곳에 살아서, 살아있는 모습이 처음 촬영된 건 2004년이 되어서였을 만큼 신비로운 존재예요.'},
+  {id:'megalodon', name:'리비아탄', region:'abyss', grade:'primordial', points:16000,
+    fact:'리비아탄은 성경과 여러 신화에 등장하는 거대한 바다 괴물이에요. 실제로 존재하진 않지만, 옛 뱃사람들은 폭풍우 속에서 배를 통째로 집어삼킬 만큼 거대한 고래의 모습으로 상상하곤 했어요.'},
+  {id:'realmegalodon', name:'메갈로돈', region:'abyss', grade:'primordial', points:13000,
+    fact:'메갈로돈은 실제로 살았던 초대형 상어로, 몸길이가 15m를 넘었을 것으로 추정돼요. 지금의 백상아리보다 훨씬 거대했지만 약 360만 년 전 멸종했어요.'},
+
+  {id:'arcticcod', name:'북극대구', region:'polar', grade:'common', points:50},
+  {id:'capelin', name:'열빙어', region:'polar', grade:'common', points:50,
+    fact:'열빙어는 산란기가 되면 거대한 무리를 지어 해안으로 몰려와요. 북극권 바다새와 물범, 고래까지 먹여 살리는 극지 먹이사슬의 핵심종이에요.'},
+  {id:'arcticchar', name:'북극곤들매기', region:'polar', grade:'rare', points:150,
+    fact:'북극곤들매기는 지구에서 가장 북쪽에 사는 민물고기예요. 산란기가 되면 배 쪽이 선명한 주황빛으로 물들어요.'},
+  {id:'greenlandhalibut', name:'그린란드넙치', region:'polar', grade:'rare', points:150},
+  {id:'narwhal', name:'일각고래', region:'polar', grade:'epic', points:700,
+    fact:'일각고래는 왼쪽 송곳니가 나선형으로 최대 3m까지 자라나 "바다의 유니콘"이라 불려요. 이 뿔은 실은 예민한 감각기관 역할도 한다고 알려져 있어요.'},
+  {id:'walrus', name:'바다코끼리', region:'polar', grade:'epic', points:700,
+    fact:'바다코끼리는 기다란 송곳니로 얼음 위로 몸을 끌어올리고, 해저의 조개를 입천장으로 훑어 먹어요. 수컷은 몸무게가 1.5톤을 넘기도 해요.'},
+  {id:'belugawhale', name:'벨루가', region:'polar', grade:'legendary', points:2500,
+    fact:'벨루가는 목뼈가 다른 고래와 달리 서로 붙어있지 않아서 고개를 자유롭게 움직일 수 있어요. 다양한 소리를 내는 것으로 유명해 "바다의 카나리아"라 불려요.'},
+  {id:'greenlandshark', name:'그린란드상어', region:'polar', grade:'secret', points:6000,
+    fact:'그린란드상어는 척추동물 중 가장 오래 사는 것으로 알려져 있어요. 나이가 400살을 넘는 개체도 발견됐고, 성체가 되는 데만 150년 가까이 걸려요.'},
+  {id:'bowheadwhale', name:'북극고래', region:'polar', grade:'primordial', points:22000,
+    fact:'북극고래는 포유류 중 가장 오래 사는 동물이에요. 옛 고래잡이가 박아넣은 작살촉이 200년도 더 지나 몸속에서 발견된 개체도 있어요.'},
+
+  {id:'icefish', name:'남극빙어', region:'polar', grade:'common', points:50,
+    fact:'남극빙어는 척추동물 중 유일하게 피가 붉지 않아요. 헤모글로빈이 없어 피가 투명하지만, 대신 혈장에 부동액 성분이 있어 영하의 바닷물에서도 얼지 않아요.'},
+  {id:'krill', name:'남극크릴', region:'polar', grade:'common', points:50,
+    fact:'남극크릴은 몸길이 6cm 남짓한 작은 생물이지만, 전체 무게를 합치면 지구에서 가장 많은 생물량을 가진 동물종 중 하나예요. 펭귄부터 고래까지 남극 생태계 전체를 떠받치고 있어요.'},
+  {id:'weddellseal', name:'웨델물범', region:'polar', grade:'rare', points:150,
+    fact:'웨델물범은 물범 중 가장 남쪽에 살아요. 얼음에 숨구멍을 뚫어 두고 최대 45분 가까이 잠수해 먹이를 사냥해요.'},
+  {id:'emperorpenguin', name:'황제펭귄', region:'polar', grade:'rare', points:150,
+    fact:'황제펭귄은 남극의 혹한 속에서 알을 품는 유일한 펭귄이에요. 수컷이 두 달 넘게 아무것도 먹지 않고 발등 위에 알을 올린 채 서서 버텨요.'},
+  {id:'leopardseal', name:'레오파드물범', region:'polar', grade:'epic', points:700,
+    fact:'레오파드물범은 남극 바다의 최상위 포식자 중 하나예요. 표범을 닮은 무늬와 날카로운 이빨로 펭귄까지 사냥해요.'},
+  {id:'toothfish', name:'메로', region:'polar', grade:'epic', points:700,
+    fact:'메로(남극이빨고기)는 수심 2000m 넘는 깊은 곳에서도 살아요. 몸속에 천연 부동액 단백질이 있어 얼음처럼 차가운 남극 바다에서도 얼지 않아요.'},
+  {id:'finwhale', name:'긴수염고래', region:'polar', grade:'legendary', points:2500,
+    fact:'긴수염고래는 대왕고래 다음으로 몸집이 큰 동물이에요. 날렵한 몸매와 빠른 속도 덕분에 "바다의 그레이하운드"라는 별명을 가지고 있어요.'},
+  {id:'colossalsquid', name:'콜로설오징어', region:'polar', grade:'secret', points:6000,
+    fact:'콜로설오징어는 대왕오징어보다도 몸집이 크고 무거운 것으로 추정되는 심해 생물이에요. 눈 지름이 축구공만 해서 동물계 통틀어 가장 큰 눈을 가졌어요.'},
+  {id:'humpbackwhale', name:'혹등고래', region:'polar', grade:'secret', points:6000,
+    fact:'혹등고래는 몸길이의 3분의 1에 달하는 긴 가슴지느러미를 가졌어요. 수컷이 부르는 복잡한 노래는 몇 시간이고 이어지며, 해마다 조금씩 바뀐다고 알려져 있어요.'},
+  {id:'bluewhale', name:'대왕고래', region:'polar', grade:'primordial', points:22000,
+    fact:'대왕고래는 지구 역사상 존재했던 동물 중 가장 몸집이 커요. 심장 하나의 무게만 자동차만 하고, 울음소리는 가장 큰 동물 소리로 기록돼 있어요.'},
+
+  {id:'azuredragon', name:'청룡', region:'paradise', grade:'primordial', points:55000,
+    fact:'청룡은 물을 다스리는 신령한 용이에요. 이무기가 천 년을 수행해 여의주를 얻으면 비로소 청룡이 되어 하늘로 오른다는 전설이 전해져요.'},
+  {id:'mermaid', name:'인어', region:'paradise', grade:'primordial', points:60000,
+    fact:'인어는 바다와 낙원을 넘나드는 신비로운 존재로 전해져요. 노랫소리를 들은 이는 인어를 다시 볼 수 있길 평생 소망하게 된다고 해요.'},
+  {id:'kraken', name:'크라켄', region:'paradise', grade:'primordial', points:62000,
+    fact:'크라켄은 북유럽 뱃사람들 사이에 전해지는 거대한 바다 괴물이에요. 거대한 촉수로 배를 통째로 휘감아 바닷속으로 끌고 들어간다고 전해져요.'},
+  {id:'isonade', name:'이소나데', region:'paradise', grade:'primordial', points:45000,
+    fact:'이소나데는 일본 규슈 지방 어부들 사이에 전해지는 상어 모습의 요괴예요. 갈고리처럼 거친 피부로 사람을 낚아채 물속으로 끌고 들어간다고 전해져요.'},
+  {id:'ghostwhale', name:'유령고래', region:'paradise', grade:'primordial', points:48000,
+    fact:'유령고래는 폭풍이 몰아치는 밤바다에 나타난다는 창백한 고래 유령이에요. 조난당한 뱃사람들의 넋이 고래의 모습으로 떠돈다는 옛이야기에서 전해져요.'},
+  {id:'zaratan', name:'자라탄', region:'paradise', grade:'primordial', points:52000,
+    fact:'자라탄은 등딱지가 섬처럼 거대한 전설의 바다거북이에요. 옛 항해자들은 이 등딱지를 섬으로 착각해 상륙했다가, 불을 피우면 놀란 자라탄이 물속으로 가라앉아버렸다는 이야기가 전해져요.'},
+  {id:'leviathanserpent', name:'레비아탄', region:'paradise', grade:'primordial', points:58000,
+    fact:'레비아탄은 구약성서 욥기에 등장하는 거대한 바다 괴물이에요. 온몸이 비늘 갑옷처럼 촘촘히 덮여 있고 입에서 불을 내뿜는다고 묘사돼요.'},
+  {id:'jormungandr', name:'요르문간드', region:'paradise', grade:'primordial', points:70000,
+    fact:'요르문간드는 북유럽 신화 속 "미드가르드의 뱀"이에요. 몸이 너무 거대해서 세상을 통째로 휘감고 제 꼬리를 물고 있다고 전해지며, 라그나로크 때 토르와 맞서 싸우는 운명을 가졌어요.'},
+  {id:'devilwhale', name:'악마고래', region:'paradise', grade:'primordial', points:50000,
+    fact:'악마고래는 뱃사람들 사이에서 전해지는 사악한 고래 괴물이에요. 붉게 타오르는 눈으로 배를 노려보다 통째로 집어삼킨다는 무서운 이야기로 전해져요.'},
+  {id:'ilbelli', name:'일벨리', region:'paradise', grade:'primordial', points:40000,
+    fact:'일벨리는 깊은 바닷속에서만 목격된다는 정체불명의 전설 속 괴물이에요. 정확한 모습을 본 이가 드물어 지금도 수수께끼로 남아있어요.'},
+  {id:'cipactli', name:'시팍틀리', region:'paradise', grade:'primordial', points:56000,
+    fact:'시팍틀리는 아즈텍 신화에 나오는 태초의 괴물이에요. 온몸에 눈과 입이 가득 달린 악어를 닮은 모습으로 그려지며, 신들이 이 괴물의 몸을 갈라 하늘과 땅을 만들었다고 전해져요.'},
+  {id:'bloop', name:'블룹', region:'paradise', grade:'primordial', points:80000,
+    fact:'블룹은 1997년 남태평양에서 녹음된 정체불명의 초저주파 해양음이에요. 소리의 주파수로 몸길이를 추정하면 무려 215m에 달해 에펠탑에 맞먹는 크기의 생물일지도 모른다는 상상을 낳았어요. 공식적으로는 남극 빙하가 갈라지는 소리로 설명되지만, 대중문화에서는 대왕고래마저 사냥하는 초거대 포식자로 그려지곤 해요.'},
+  {id:'ningen', name:'닝겐', region:'paradise', grade:'primordial', points:46000,
+    fact:'닝겐은 남극해에서 목격됐다는 소문이 도는 정체불명의 거대 생물이에요. 온몸이 창백하고 매끈하며 사람과 비슷한 윤곽을 가졌다고 전해지지만, 정확한 정체는 지금도 밝혀지지 않았어요.'},
+];
+
+/* ---------- FISH ART (flat, soft-shaded illustration style) ---------- */
+const TEMPLATES = {
+  round:{
+    body:'M26,50 C26,28 52,14 88,14 C120,14 142,28 148,50 C142,72 120,86 88,86 C52,86 26,72 26,50 Z',
+    belly:'M38,58 C56,72 94,74 118,64 C98,78 60,80 40,68 Z',
+    tail:'M28,50 L6,28 L20,50 L6,72 Z',
+    dorsal:'M78,15 C84,2 100,0 106,13 C96,17 86,17 78,15 Z',
+    pect:'M104,56 C112,66 104,74 92,70 C96,62 100,58 104,56 Z',
+    shine:'M40,30 C58,20 84,18 106,26', eye:[130,42]
+  },
+  fusiform:{
+    body:'M12,50 C12,36 38,26 80,26 C116,26 140,36 150,50 C140,64 116,74 80,74 C38,74 12,64 12,50 Z',
+    belly:'M28,58 C52,70 100,72 132,60 C110,72 56,74 32,64 Z',
+    tail:'M14,50 L-6,30 L10,50 L-6,70 Z',
+    dorsal:'M66,28 C70,16 86,16 90,27 C82,30 72,31 66,28 Z',
+    pect:'M92,54 C98,64 92,70 82,66 C86,60 89,56 92,54 Z',
+    shine:'M30,38 C55,28 90,26 118,34', eye:[134,44]
+  },
+  catfish:{
+    body:'M10,52 C10,44 16,38 28,36 C52,30 94,30 124,38 C138,42 146,48 148,52 C146,58 136,64 122,66 C94,72 52,72 28,66 C16,64 10,58 10,52 Z',
+    belly:'M30,60 C58,68 96,68 124,58 C102,70 54,72 32,66 Z',
+    tail:'M10,46 C0,42 -2,58 8,64 C12,58 12,50 10,46 Z',
+    dorsal:'M58,32 C62,20 74,20 78,31 C70,34 63,34 58,32 Z',
+    pect:'M114,48 C122,60 112,68 100,62 C104,54 109,50 114,48 Z',
+    shine:'M30,42 C55,34 85,32 112,40', eye:[136,42]
+  },
+  flatfish:{
+    body:'M12,50 C12,32 46,20 84,20 C118,20 144,34 150,50 C144,64 118,78 84,78 C46,78 12,68 12,50 Z',
+    belly:'M30,55 C56,66 104,66 128,56 C104,68 54,70 32,62 Z',
+    tail:'M16,50 L2,40 L4,50 L2,60 Z',
+    pect:'M92,62 C98,70 90,74 82,68 C86,64 89,63 92,62 Z',
+    shine:'M30,36 C55,28 88,26 116,34', eye:[92,32], eye2:[104,30]
+  },
+  shark:{
+    body:'M12,54 C12,40 32,28 62,26 C94,24 126,34 146,48 C150,50 150,52 146,54 C126,64 94,72 62,70 C32,68 12,64 12,54 Z',
+    belly:'M28,58 C52,68 92,68 124,58 C100,66 52,68 30,62 Z',
+    tail:'M14,50 L-4,20 L8,50 L-2,76 Z',
+    dorsal:'M66,26 C72,6 90,6 94,25 C85,29 74,29 66,26 Z',
+    pect:'M98,58 C108,74 94,80 82,70 C88,64 93,60 98,58 Z',
+    shine:'M28,40 C50,30 85,28 116,36', eye:[134,42]
+  },
+  bulbous:{
+    body:'M22,50 C22,22 54,8 82,12 C112,16 134,30 134,50 C134,70 112,84 82,88 C54,92 22,78 22,50 Z',
+    belly:'M36,60 C58,72 96,72 116,60 C96,78 54,78 38,66 Z',
+    tail:'M22,50 C12,44 4,48 4,50 C4,52 12,56 22,50 Z',
+    shine:'M34,32 C52,20 78,18 100,26', eye:[108,36]
+  },
+  squid:{
+    body:'M18,50 C18,32 36,18 60,18 C84,18 98,32 98,50 C98,68 84,82 60,82 C36,82 18,68 18,50 Z',
+    finL:'M22,32 L4,18 L26,42 Z', finL2:'M22,68 L4,82 L26,58 Z',
+    tentA:'M96,44 C120,40 138,48 150,42', tentB:'M96,50 C122,52 140,58 154,54', tentC:'M96,56 C118,62 134,70 144,72',
+    shine:'M24,34 C36,24 56,22 76,30', eye:[88,40], eye2:[88,60]
+  },
+  eel:{
+    body:'M8,52 C22,32 42,68 62,48 C82,28 102,64 120,46 C134,32 144,40 152,50 C144,60 134,68 120,54 C102,72 82,36 62,54 C42,72 22,34 8,52 Z',
+    shine:'M20,38 C40,28 65,40 90,32', eye:[144,48]
+  },
+  jellyfish:{
+    body:'M18,42 C18,22 42,10 74,10 C106,10 130,22 130,42 C130,50 120,52 110,48 C100,52 90,50 80,53 C70,50 60,52 50,49 C40,52 30,50 20,46 C18,45 18,43 18,42 Z',
+    belly:'M32,20 C50,12 98,12 116,20 C98,26 50,26 32,20 Z',
+    shine:'M40,18 C58,10 90,10 108,18', tentFringe:true
+  },
+  turtle:{
+    body:'M26,50 C26,28 52,14 88,14 C120,14 142,28 148,50 C142,72 120,86 88,86 C52,86 26,72 26,50 Z',
+    belly:'M38,58 C56,72 94,74 118,64 C98,78 60,80 40,68 Z',
+    shine:'M42,30 C60,20 84,18 104,26', eye:[172,46]
+  }
+};
+const EXTRAS = {
+  whiskers:(c)=>`<g stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round"><path d="M146,48 C156,44 164,40 170,35"/><path d="M146,56 C156,60 164,64 170,69"/></g>`,
+  barbel:(c)=>`<g stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round"><path d="M144,54 C152,60 158,66 162,72"/></g>`,
+  scutes:(c)=>`<g fill="${c}" opacity=".6"><circle cx="46" cy="30" r="3.2"/><circle cx="66" cy="27" r="3.2"/><circle cx="86" cy="26" r="3.2"/><circle cx="106" cy="27" r="3.2"/></g>`,
+  sail:(c)=>`<path d="M56,26 C64,-10 104,-14 116,16 C98,21 74,26 56,26 Z" fill="${c}" opacity=".95"/>`,
+  bill:(c)=>`<path d="M150,48 L196,44 L196,52 L150,54 Z" fill="${c}"/>`,
+  dorsalridge:(c)=>`<path d="M56,26 C66,8 104,8 122,22 C100,27 74,28 56,26 Z" fill="${c}"/>`,
+  lobefins:(c)=>`<g fill="${c}"><path d="M96,58 C104,68 100,76 90,73 C92,66 94,61 96,58 Z"/><path d="M52,58 C58,68 54,76 46,72 C48,65 50,61 52,58 Z"/></g>`,
+  lure:(c,glow)=>`<g><path d="M92,12 C96,0 106,-4 112,4" stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="113" cy="5" r="7" fill="${glow||c}" opacity=".35"/><circle cx="113" cy="5" r="3.6" fill="${glow||c}"/></g>`,
+  finlets:(c)=>`<g fill="${c}"><path d="M120,32 L126,26 L128,34 Z"/><path d="M128,34 L134,29 L136,37 Z"/><path d="M136,36 L142,32 L143,40 Z"/><path d="M120,68 L126,74 L128,66 Z"/><path d="M128,66 L134,71 L136,63 Z"/></g>`,
+  gillslits:(c)=>`<g stroke="${c}" stroke-width="1.3" opacity=".55" fill="none"><path d="M118,32 C121,42 121,58 118,68"/><path d="M124,33 C127,43 127,57 124,67"/><path d="M130,35 C132,43 132,57 130,65"/></g>`,
+  topArm:(c)=>`<path d="M46,20 C36,4 14,-2 2,8 C16,6 30,12 36,24 C40,18 43,18 46,20 Z" fill="${c}"/>`,
+  maw:(c)=>`<g><path d="M132,34 C148,38 152,48 150,62 C144,56 134,52 124,53 C129,48 132,41 132,34 Z" fill="${c}"/>
+    <g fill="#f2eee0"><path d="M128,40 L132,36 L134,42 Z"/><path d="M134,42 L138,38 L140,44 Z"/><path d="M140,44 L144,41 L145,46 Z"/>
+    <path d="M128,58 L132,62 L134,56 Z"/><path d="M134,56 L138,60 L140,54 Z"/><path d="M140,54 L144,57 L145,52 Z"/></g></g>`,
+  goblinSnout:(c)=>`<path d="M144,44 C158,39 174,41 182,47 C174,53 158,51 144,49 Z" fill="${c}" opacity=".95"/>`,
+  dorsalCrest:(c)=>`<path d="M10,36 C30,25 50,30 70,25 C90,20 110,27 130,31 C140,33 148,36 152,38" stroke="${c}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>`,
+  turtleHead:(c)=>`<path d="M144,46 C154,44 162,44 168,46 L168,52 C162,54 154,54 144,52 Z" fill="${c}"/><ellipse cx="176" cy="49" rx="12" ry="10" fill="${c}"/>`,
+  turtleLegs:(c)=>`<g fill="${c}"><ellipse cx="36" cy="24" rx="11" ry="7" transform="rotate(-30 36 24)"/><ellipse cx="36" cy="76" rx="11" ry="7" transform="rotate(30 36 76)"/><ellipse cx="124" cy="22" rx="9" ry="6" transform="rotate(20 124 22)"/><ellipse cx="124" cy="78" rx="9" ry="6" transform="rotate(-20 124 78)"/></g>`,
+};
+function jellyfishTentacles(color){
+  const xs=[26,38,50,62,74,86,98,110,120];
+  return xs.map((x,i)=>{
+    const len = 34+((i%3)*12);
+    const sway = (i%2===0? 7:-7);
+    return `<path d="M${x},46 C${x+sway},${46+len*0.45} ${x-sway},${46+len*0.8} ${x},${46+len}" stroke="${color}" stroke-width="1.7" fill="none" stroke-linecap="round" opacity=".65"/>`;
+  }).join('');
+}
+function patternOverlayOne(pattern,color){
+  if(!pattern || pattern==='none') return '';
+  if(pattern==='spots'){
+    const pts=[[50,34],[68,30],[86,36],[104,44],[56,56],[76,58],[96,54],[42,48],[62,44],[80,48],[100,36],[46,60]];
+    return pts.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${2+(i%3)}" fill="${color}" opacity=".8"/>`).join('');
+  }
+  if(pattern==='stripes'){
+    let s=''; for(let i=0;i<5;i++){ const x=40+i*20; s+=`<path d="M${x},24 C${x-6},40 ${x-6},60 ${x},76" stroke="${color}" stroke-width="2" fill="none" opacity=".5"/>`; } return s;
+  }
+  if(pattern==='tiger'){
+    let s=''; const ys=[26,36,46,56,66,74];
+    ys.forEach((y,i)=>{ const off=(i%2)*10; s+=`<path d="M${28+off},${y} L${50+off},${y-5} L${72+off},${y+4} L${94+off},${y-4} L${116+off},${y}" stroke="${color}" stroke-width="2.2" fill="none" opacity=".55" stroke-linecap="round"/>`; });
+    return s;
+  }
+  if(pattern==='mottle'){
+    const blobs=[[40,32,8],[58,28,6],[74,36,7],[46,52,6],[64,56,8],[36,60,5],[82,46,6]];
+    return blobs.map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${color}" opacity=".3"/>`).join('');
+  }
+  if(pattern==='band') return `<path d="M92,20 C86,36 86,64 92,80" stroke="${color}" stroke-width="4" fill="none" opacity=".7"/>`;
+  if(pattern==='lateral') return `<path d="M15,50 C50,52 110,52 150,50" stroke="${color}" stroke-width="2" fill="none" opacity=".7"/>`;
+  return '';
+}
+function patternOverlay(art){
+  const list = art.patterns || (art.pattern ? [{type:art.pattern, color:art.accent||art.fin}] : []);
+  return list.map(p=>patternOverlayOne(p.type,p.color)).join('');
+}
+function eyeSVG([x,y], pupilColor){ pupilColor = pupilColor || '#1a1a1a'; return `<circle cx="${x}" cy="${y}" r="5" fill="#fff"/><circle cx="${x+1}" cy="${y}" r="2.3" fill="${pupilColor}"/><circle cx="${x+2.4}" cy="${y-1.4}" r=".9" fill="#fff"/>`; }
+function gillLine(eye){
+  if(!eye) return '';
+  const [x,y]=eye;
+  return `<path d="M${x-16},${y-14} C${x-9},${y-4} ${x-9},${y+4} ${x-16},${y+16}" stroke="rgba(0,0,0,.28)" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+}
+function renderFishSVG(art, fishId){
+  if(!art) return '';
+  const t = TEMPLATES[art.tmpl];
+  const gid = 'fg-' + (fishId||('r'+Math.random().toString(36).slice(2,8)));
+  const outline = 'stroke="rgba(0,0,0,.22)" stroke-width="1.5"';
+  let p = `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${art.fb}"/><stop offset="1" stop-color="${art.bl}"/></linearGradient></defs>`;
+  p += `<path d="${t.body}" fill="url(#${gid})" ${outline}/>`;
+  if(t.belly) p += `<path d="${t.belly}" fill="${art.bl}" opacity=".3"/>`;
+  if(t.tentFringe) p += jellyfishTentacles(art.fin);
+  p += patternOverlay(art);
+  if(t.tail) p += `<path d="${t.tail}" fill="${art.fin}" ${outline}/>`;
+  if(t.finL){ p += `<path d="${t.finL}" fill="${art.fin}" ${outline}/><path d="${t.finL2}" fill="${art.fin}" ${outline}/>`; }
+  if(t.tentA){ p += `<path d="${t.tentA}" stroke="${art.fb}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="${t.tentB}" stroke="${art.fb}" stroke-width="4.5" fill="none" stroke-linecap="round"/><path d="${t.tentC}" stroke="${art.fb}" stroke-width="4" fill="none" stroke-linecap="round"/>`; }
+  if(t.dorsal) p += `<path d="${t.dorsal}" fill="${art.fin}" ${outline}/>`;
+  if(t.pect) p += `<path d="${t.pect}" fill="${art.fin}" opacity=".95" ${outline}/>`;
+  if(t.eye) p += gillLine(t.eye);
+  (art.extras||[]).forEach(ex=>{ if(ex==='lure') p += EXTRAS.lure(art.fin, art.glow); else if(EXTRAS[ex]) p += EXTRAS[ex](art.accent||art.fin); });
+  if(t.shine) p += `<path d="${t.shine}" stroke="#fff" stroke-width="3" fill="none" opacity=".32" stroke-linecap="round"/>`;
+  if(t.eye) p += eyeSVG(t.eye, art.eyeColor);
+  if(t.eye2) p += eyeSVG(t.eye2, art.eyeColor);
+  return `<svg class="fic" viewBox="0 0 200 100">${p}</svg>`;
+}
+const FISH_ART = {
+  crucian:{tmpl:'round', fb:'#c9915a', bl:'#f3dcae', fin:'#a06f3c'},
+  minnow:{tmpl:'fusiform', fb:'#a8c2cc', bl:'#eef6f4', fin:'#7f9aa6', pattern:'lateral', accent:'#5c7280'},
+  bullhead:{tmpl:'catfish', fb:'#c9863f', bl:'#f0d199', fin:'#8a5a24', extras:['whiskers']},
+  carp:{tmpl:'round', fb:'#e37a45', bl:'#fbe0b8', fin:'#b3572a'},
+  silvercarp:{tmpl:'round', fb:'#a9c0c6', bl:'#f1f7f5', fin:'#7d9aa0'},
+  catfish:{tmpl:'catfish', fb:'#57584a', bl:'#8f9078', fin:'#3a3b30', extras:['whiskers']},
+  softshellturtle:{tmpl:'turtle', fb:'#5c6b48', bl:'#a8ad82', fin:'#7a8a5c', pattern:'spots', accent:'#3f4a30', extras:['turtleLegs','turtleHead']},
+  goldcarp:{tmpl:'round', fb:'#f0b93e', bl:'#fff0bc', fin:'#c98a1f', pattern:'spots', accent:'#fff6d8'},
+  sweetfish:{tmpl:'fusiform', fb:'#8cb39e', bl:'#eef5ea', fin:'#5f8a72'},
+  darkchub:{tmpl:'fusiform', fb:'#69806c', bl:'#c3d0b5', fin:'#455a48'},
+  chub:{tmpl:'fusiform', fb:'#b8b389', bl:'#eee9c9', fin:'#8a8459', pattern:'lateral', accent:'#5c5636'},
+  mandarin:{tmpl:'round', fb:'#a49b5c', bl:'#e3dba0', fin:'#726a38', pattern:'spots', accent:'#5c5530'},
+  rainbowtrout:{tmpl:'fusiform', fb:'#7fa3bc', bl:'#f0e4cf', fin:'#5a7f96', patterns:[{type:'band',color:'#e8536b'},{type:'spots',color:'#2e3b45'}]},
+  giantcatfish:{tmpl:'catfish', fb:'#43443a', bl:'#767767', fin:'#2a2b23', extras:['whiskers']},
+  hagfishking:{tmpl:'eel', fb:'#5c4f5e', bl:'#8a7c8c', fin:'#3d3440'},
+  troutspirit:{tmpl:'fusiform', fb:'#6c5a96', bl:'#dcd0f2', fin:'#493a6b', pattern:'spots', accent:'#c9a8ff', glow:'#d9c2ff'},
+  sturgeon:{tmpl:'fusiform', fb:'#6c6a5a', bl:'#b3ad91', fin:'#4a4839', extras:['scutes','barbel']},
+  pirarucu:{tmpl:'fusiform', fb:'#3a4a35', bl:'#8a9a6c', fin:'#c94a3a', pattern:'spots', accent:'#e0693f'},
+  mackerel:{tmpl:'fusiform', fb:'#2f6478', bl:'#e4e6cf', fin:'#1c3742', pattern:'tiger', accent:'#122630'},
+  jackmackerel:{tmpl:'fusiform', fb:'#8d9dab', bl:'#f2f5ef', fin:'#647380', pattern:'lateral', accent:'#f0b93e'},
+  shad:{tmpl:'fusiform', fb:'#dfe6df', bl:'#f8faf6', fin:'#a8b4ab', pattern:'spots', accent:'#c7d2c2'},
+  flounder:{tmpl:'flatfish', fb:'#a08a63', bl:'#d9cca4', fin:'#7a6947', pattern:'spots', accent:'#5f5136'},
+  seabream:{tmpl:'round', fb:'#e79bad', bl:'#fbe6ec', fin:'#c06f85'},
+  tuna:{tmpl:'fusiform', fb:'#1c3450', bl:'#d8d4c4', fin:'#101f30', extras:['finlets']},
+  amberjack:{tmpl:'fusiform', fb:'#9dabb8', bl:'#f2f0e3', fin:'#6c7c88', pattern:'band', accent:'#f0b93e'},
+  marlin:{tmpl:'fusiform', fb:'#234f6e', bl:'#d3dcd8', fin:'#183a52', extras:['bill','sail']},
+  mahi:{tmpl:'fusiform', fb:'#2f9e7f', bl:'#f0d16c', fin:'#1e6b56', extras:['dorsalridge']},
+  greatwhite:{tmpl:'shark', fb:'#7c848a', bl:'#f0eee0', fin:'#575e63', extras:['gillslits']},
+  whaleshark:{tmpl:'shark', fb:'#2f5468', bl:'#dbe3de', fin:'#1f3a48', pattern:'spots', accent:'#eef0e3', extras:['gillslits']},
+  anglerfish:{tmpl:'bulbous', fb:'#453a38', bl:'#7a6d63', fin:'#2b2321', extras:['lure'], glow:'#9fe8d8'},
+  deepeel:{tmpl:'bulbous', fb:'#cfe8ea', bl:'#eef8f8', fin:'#7fa8ac', eyeColor:'#8fe86a'},
+  lanternfish:{tmpl:'fusiform', fb:'#2a2e42', bl:'#4a4f66', fin:'#1a1d2c', pattern:'spots', accent:'#7fe8ff', eyeColor:'#7fe8ff'},
+  giantsquidjr:{tmpl:'squid', fb:'#7a5589', bl:'#d4b6dd', fin:'#5a3c68'},
+  vampiresquid:{tmpl:'squid', fb:'#3a1420', bl:'#6b2a3a', fin:'#200a12', eyeColor:'#ff5555', extras:['topArm']},
+  glowanglerking:{tmpl:'squid', fb:'#a8c4d9', bl:'#dceaf2', fin:'#7f9db3', eyeColor:'#7fd6e8', extras:['topArm']},
+  frilledshark:{tmpl:'shark', fb:'#4a4a30', bl:'#7a7a50', fin:'#2a2a18', extras:['gillslits']},
+  coelacanth:{tmpl:'fusiform', fb:'#2f5674', bl:'#d3dcd8', fin:'#203c52', pattern:'spots', accent:'#eef0e3', extras:['lobefins']},
+  goblinshark:{tmpl:'shark', fb:'#d9a8a0', bl:'#f6dcd6', fin:'#b3766c', extras:['gillslits','goblinSnout']},
+  lionmane:{tmpl:'jellyfish', fb:'#c9614a', bl:'#f0b088', fin:'#a84632'},
+  fangtooth:{tmpl:'eel', fb:'#b8c2c9', bl:'#e8edf0', fin:'#c93a3a', extras:['dorsalCrest']},
+  giantsquid:{tmpl:'squid', fb:'#8a3a4a', bl:'#d68a96', fin:'#5c2430', eyeColor:'#ffce54', extras:['topArm']},
+  kraken:{tmpl:'squid', fb:'#c98aa0', bl:'#ecd0da', fin:'#7a4a68', pattern:'mottle', accent:'#9a5e78', eyeColor:'#c9d94a', extras:['topArm']},
+  megalodon:{tmpl:'shark', fb:'#3d4a44', bl:'#9aa08c', fin:'#242b26', pattern:'mottle', accent:'#242b26', extras:['gillslits','maw']},
+  realmegalodon:{tmpl:'shark', fb:'#4a3f38', bl:'#8a7a68', fin:'#2a231e', pattern:'mottle', accent:'#1a1512', extras:['gillslits','maw']},
+  arcticcod:{tmpl:'fusiform', fb:'#8a9aa0', bl:'#dce6e6', fin:'#5a6a70', pattern:'mottle', accent:'#5a6a70'},
+  capelin:{tmpl:'fusiform', fb:'#c4d4d9', bl:'#eef6f6', fin:'#8aa0a6', pattern:'lateral', accent:'#4a6a78'},
+  arcticchar:{tmpl:'fusiform', fb:'#4a6a8a', bl:'#e8846a', fin:'#2a4058', pattern:'spots', accent:'#ffb894'},
+  greenlandhalibut:{tmpl:'flatfish', fb:'#5a4a3a', bl:'#8a7360', fin:'#3a2f24'},
+  narwhal:{tmpl:'eel', fb:'#a8b4b8', bl:'#dce6e6', fin:'#7a888c', extras:['bill']},
+  walrus:{tmpl:'bulbous', fb:'#c9a878', bl:'#e8d4a8', fin:'#8a6a44', extras:['whiskers']},
+  belugawhale:{tmpl:'shark', fb:'#eef2f2', bl:'#fbfcfa', fin:'#cdd6d4'},
+  greenlandshark:{tmpl:'shark', fb:'#6a7368', bl:'#a0aa98', fin:'#454d40', extras:['gillslits']},
+  bowheadwhale:{tmpl:'shark', fb:'#1a1e28', bl:'#3a4250', fin:'#0f1218', pattern:'band', accent:'#dce4ea'},
+  icefish:{tmpl:'fusiform', fb:'#dce8ec', bl:'#f4f8fa', fin:'#a8c0c9', eyeColor:'#8fd6e8'},
+  krill:{tmpl:'fusiform', fb:'#e8968a', bl:'#f8d4cc', fin:'#c46a5a', pattern:'band', accent:'#ffb8a8'},
+  weddellseal:{tmpl:'bulbous', fb:'#8a8478', bl:'#c9c2b0', fin:'#5a564a', pattern:'spots', accent:'#4a463c'},
+  emperorpenguin:{tmpl:'round', fb:'#1a1e24', bl:'#f4f4ec', fin:'#0f1216', pattern:'band', accent:'#f0c85a'},
+  leopardseal:{tmpl:'bulbous', fb:'#5a6a5c', bl:'#a8b8a0', fin:'#3a4638', pattern:'spots', accent:'#2a3224'},
+  toothfish:{tmpl:'fusiform', fb:'#4a4a44', bl:'#8a887c', fin:'#2a2a26'},
+  finwhale:{tmpl:'shark', fb:'#4a545c', bl:'#8a949c', fin:'#2a3238', pattern:'lateral', accent:'#c4ccd0'},
+  colossalsquid:{tmpl:'squid', fb:'#5a3a52', bl:'#9a6e90', fin:'#3a2436', eyeColor:'#e8d65c', extras:['topArm']},
+  humpbackwhale:{tmpl:'shark', fb:'#2a3a4a', bl:'#dce4e8', fin:'#182430', pattern:'spots', accent:'#eef4f6'},
+  bluewhale:{tmpl:'shark', fb:'#3a5a72', bl:'#7a9cb0', fin:'#22394a', pattern:'mottle', accent:'#5a7a90'},
+  azuredragon:{tmpl:'eel', fb:'#2f6a9e', bl:'#a8d8e8', fin:'#e8c65c', eyeColor:'#ffe08a', extras:['dorsalCrest','barbel']},
+  mermaid:{tmpl:'fusiform', fb:'#4a8a9e', bl:'#e8c9d9', fin:'#8f5ea8', pattern:'spots', accent:'#f0e0f6', extras:['sail']},
+  isonade:{tmpl:'shark', fb:'#4a5a5e', bl:'#8a9a9c', fin:'#2a3538', extras:['scutes','gillslits']},
+  ghostwhale:{tmpl:'shark', fb:'#dce8ec', bl:'#f4f8fa', fin:'#a8c4cc', eyeColor:'#7fd6e8', pattern:'spots', accent:'#eef6f8', extras:['gillslits']},
+  zaratan:{tmpl:'turtle', fb:'#5a6b4a', bl:'#8a9a6c', fin:'#3a4530', pattern:'mottle', accent:'#2a3020', extras:['turtleLegs','turtleHead']},
+  leviathanserpent:{tmpl:'eel', fb:'#6e3a2a', bl:'#c98a5a', fin:'#3a1f16', eyeColor:'#ff6a3a', extras:['dorsalCrest','gillslits']},
+  jormungandr:{tmpl:'eel', fb:'#2f4a2f', bl:'#5a7a4a', fin:'#1a2a18', pattern:'mottle', accent:'#16220f', extras:['barbel']},
+  devilwhale:{tmpl:'shark', fb:'#241a1a', bl:'#4a2a2a', fin:'#140d0d', eyeColor:'#ff2a2a', extras:['maw','gillslits']},
+  ilbelli:{tmpl:'bulbous', fb:'#3a2a4a', bl:'#6a4a7a', fin:'#1f1530', extras:['lure'], glow:'#c9a8ff'},
+  cipactli:{tmpl:'shark', fb:'#8a6a3a', bl:'#c9a86a', fin:'#4a3520', pattern:'mottle', accent:'#3a2a15', extras:['goblinSnout','scutes']},
+  bloop:{tmpl:'shark', fb:'#141a1e', bl:'#3a4a52', fin:'#0a0d0f', eyeColor:'#ff6a3a', extras:['maw','gillslits']},
+  ningen:{tmpl:'fusiform', fb:'#e8ecec', bl:'#f8fafa', fin:'#c4cccc', extras:['lobefins']},
+};
+function fishIcon(fish){ return renderFishSVG(FISH_ART[fish.id], fish.id); }
+function sparkleOverlay(){
+  const pts=[[36,18],[164,26],[104,8],[172,64],[26,72],[118,86]];
+  return pts.map(([x,y],i)=>`<path class="sparkle-mark" style="animation-delay:${(i*0.22).toFixed(2)}s" d="M${x},${y-6} L${x+2},${y-2} L${x+6},${y} L${x+2},${y+2} L${x},${y+6} L${x-2},${y+2} L${x-6},${y} L${x-2},${y-2} Z" fill="#ffe08a"/>`).join('');
+}
+function mutantOverlay(){
+  const gid = 'mut-'+Math.random().toString(36).slice(2,8);
+  return `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ff6a6a"/><stop offset=".33" stop-color="#ffd76a"/><stop offset=".66" stop-color="#6adfff"/><stop offset="1" stop-color="#c96aff"/>
+  </linearGradient></defs><rect x="0" y="0" width="200" height="100" fill="url(#${gid})" opacity=".24" style="mix-blend-mode:color-dodge"/>`;
+}
+function fishIconStyled(fish, traits, baseSizePx){
+  traits = traits || [];
+  let scale = 1;
+  traits.forEach(t=>{ if(t.scale) scale *= t.scale; });
+  const shiny = traits.some(t=>t.id==='shiny');
+  const mutant = traits.some(t=>t.id==='mutant');
+  let svg = renderFishSVG(FISH_ART[fish.id], fish.id);
+  let inner = '';
+  if(mutant) inner += mutantOverlay();
+  if(shiny) inner += sparkleOverlay();
+  if(inner) svg = svg.replace('</svg>', inner+'</svg>');
+  if(scale!==1 && baseSizePx){
+    svg = svg.replace('class="fic"', `class="fic" style="width:${Math.round(baseSizePx*scale)}px"`);
+  }
+  return svg;
+}
+function baitIconSVG(){
+  return `<svg class="fic" viewBox="0 0 200 100"><ellipse cx="100" cy="52" rx="30" ry="19" fill="#d99bd9" stroke="rgba(0,0,0,.22)" stroke-width="1.5"/><ellipse cx="88" cy="46" rx="10" ry="6" fill="#f0cdf0" opacity=".7"/><path d="M104,34 C112,18 130,16 138,28" stroke="#6a4a86" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="138" cy="28" r="4.5" fill="#6a4a86"/></svg>`;
+}
+
+const RODS = [
+  {id:'bamboo', name:'대나무 낚싯대', price:0, desc:'특성 없음 (기준점)'},
+  {id:'carbon', name:'카본 낚싯대', price:3000, desc:'타이밍존 10% 확대 + 포인트 1.75배 (초보자 친화)', zoneBonus:0.10, pointsMult:1.75},
+  {id:'titanium', name:'티타늄 낚싯대', price:20000, desc:'태초 제외 레어 이상 등급 확률 각각 +1%p', rareToSecretBonus:1},
+  {id:'master', name:'마스터 낚싯대', price:50000, desc:'전설 이상 등급 확률 1.8배', legendaryPlusMult:1.8},
+  {id:'legend', name:'전설의 낚싯대', price:100000, desc:'완벽 타이밍 보너스 1.5배 → 2.5배 + 캐스팅 대기시간 20% 감소', perfectMult:2.5, castTimeCut:0.20},
+];
+const CONSUMABLES = [
+  {id:'bait25', name:'2.5배 포인트 미끼', price:2000, desc:'10회 캐스팅 동안 획득 포인트 2.5배 (등급 확률엔 영향 없음)', charges:10, kind:'multiplier', value:2.5},
+  {id:'guaranteedEpic', name:'확정 에픽 이상 찌', price:25000, desc:'1회 캐스팅당 1개 소모, 커먼/레어 제외 · 에픽45 · 전설30 · 비밀20 · 태초5', charges:3, kind:'guaranteed', pool:{epic:45,legendary:30,secret:20,primordial:5}},
+];
+const PARADISE_BAIT_DROP_BY_REGION = {river:0.5, sea:0.75, abyss:1, polar:1.5};
+const COSMETICS = [
+  {id:'title_novice', kind:'title', name:'초보 낚시꾼', price:300, glyph:'🎖', desc:'장착 시 EXP +3%'},
+  {id:'title_diligent', kind:'title', name:'성실한 강태공', price:600, glyph:'🎖', desc:'장착 시 포인트 +3%'},
+  {id:'title_touch', kind:'title', name:'손맛 마스터', price:1000, glyph:'🎖', desc:'장착 시 타이밍존 5% 확대'},
+  {id:'title_night', kind:'title', name:'밤낚시 전문가', price:1200, glyph:'🎖', desc:'장착 시 캐스팅 대기시간 5% 감소'},
+  {id:'title_tide', kind:'title', name:'물때를 아는 자', price:1500, glyph:'🎖', desc:'장착 시 레어 이상 등급 확률 각각 +0.2%p'},
+  {id:'title_lucky', kind:'title', name:'월척의 행운아', price:1800, glyph:'🎖', desc:'장착 시 특성(반짝이는·거대한 등) 등장 확률 1.5배'},
+  {id:'title_deep', kind:'title', name:'심해 탐험가', price:2500, glyph:'🎖', desc:'장착 시 비밀 등급 확률 +0.3%p'},
+  {id:'title_family', kind:'title', name:'가족의 자랑', price:3000, glyph:'🎖', desc:'장착 시 포인트 +5% · EXP +5%'},
+  {id:'title_legend', kind:'title', name:'전설의 손맛', price:4000, glyph:'🎖', desc:'장착 시 전설 이상 등급 확률 각각 +0.5%p'},
+  {id:'title_maniac', kind:'title', name:'낚시광', price:5000, glyph:'🎖', desc:'장착 시 캐스팅 대기시간 15% 감소'},
+  {id:'title_ruler', kind:'title', name:'바다의 지배자', price:6500, glyph:'🎖', desc:'장착 시 포인트 +10%'},
+  {id:'title_gold', kind:'title', name:'황금 손', price:8500, glyph:'🎖', desc:'장착 시 포인트 +15%'},
+  {id:'title_hof', kind:'title', name:'명예의 전당', price:30000, glyph:'🎖', desc:'장착 시 포인트 +25% · EXP +25% · 태초 확률 +0.3%p'},
+  {id:'title_zenith', kind:'title', name:'낚시의 극에 달한 자', price:125000, glyph:'🎖', desc:'장착 시 포인트 +10% · EXP +10% · 비밀·태초 확률 각각 +1.5%p · 낙원 전용 미끼 드롭 확률 +1.5%p (영구 적용과 별개, 레벨/낚싯대 보너스와 중첩)', requireNonRare:true},
+  {id:'title_enlightened', kind:'title', name:'낚시의 이치를 깨달은 자', price:5000000, glyph:'🎖', desc:'장착 시 포인트 +50% · EXP +50% · 낙원 전용 미끼 드롭 확률 +4%p · 캐스팅 대기시간 70% 감소 · 태초 확률 +4%p', requireDex:'paradise'},
+];
+const TITLE_EFFECTS = {
+  title_novice: {expMult:1.03},
+  title_diligent: {pointsMult:1.03},
+  title_touch: {zoneBonus:0.05},
+  title_night: {castTimeCut:0.05},
+  title_tide: {rareBonus:0.2},
+  title_lucky: {traitMult:1.5},
+  title_deep: {secretBonus:0.3},
+  title_family: {pointsMult:1.05, expMult:1.05},
+  title_legend: {legendaryBonus:0.5},
+  title_maniac: {castTimeCut:0.15},
+  title_ruler: {pointsMult:1.10},
+  title_gold: {pointsMult:1.15},
+  title_hof: {pointsMult:1.25, expMult:1.25, primordialBonus:0.3},
+  title_zenith: {pointsMult:1.10, expMult:1.10, secretBonus:1.5, primordialBonus:1.5, baitDropBonus:1.5},
+  title_enlightened: {pointsMult:1.5, expMult:1.5, baitDropBonus:4, castTimeCut:0.70, primordialBonus:4},
+};
+function equippedTitleEffect(){
+  return TITLE_EFFECTS[profile.cosmetics.equipped.title] || {};
+}
+function nonRareDexComplete(p){
+  return FISH.filter(f=> f.region!=='abyss' && f.grade!=='secret' && f.grade!=='primordial').every(f=> p.dex[f.id]);
+}
+function titleLocked(item){
+  if(item.requireDex && !profile.dexRewards[item.requireDex]) return true;
+  if(item.requireNonRare && !nonRareDexComplete(profile)) return true;
+  return false;
+}
+function titleLockMsg(item){
+  const parts = [];
+  if(item.requireDex) parts.push(regionOf(item.requireDex).name+' 도감 완성');
+  if(item.requireNonRare) parts.push('심해·비밀·태초 제외 전체 도감 완성');
+  return parts.join(' · ')+'이 필요해요';
+}
+const COSMETIC_KIND_LABEL = {title:'칭호'};
+
+const TRAITS = [
+  {id:'shiny', name:'반짝이는', chance:8, mult:1.5, color:'var(--gold)'},
+  {id:'giant', name:'거대한', chance:5, mult:2, color:'var(--coral)', scale:1.25},
+  {id:'mutant', name:'이상형', chance:2, mult:3, color:'var(--violet)'},
+  {id:'supergiant', name:'초 거대', chance:1.5, mult:5.0, color:'#ff3b3b', scale:1.55},
+];
+function rollTraits(){
+  const mult = equippedTitleEffect().traitMult||1;
+  return TRAITS.filter(t=> Math.random()*100 < t.chance*mult);
+}
+
+/* ---------- HELPERS ---------- */
+const $ = sel => document.querySelector(sel);
+const el = (tag, cls, html) => { const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; };
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const byId = (arr,id) => arr.find(x=>x.id===id);
+const regionOf = id => byId(REGIONS,id);
+const fishInRegion = (rid, grade) => FISH.filter(f=>f.region===rid && f.grade===grade);
+const uid = () => 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+
+function expForLevel(L){
+  if(L<=1) return 0;
+  if(L<=10) return Math.round(39*Math.pow(L-1,1.75)); // +50% from original 26 coefficient
+  if(L<=49) return expForLevel(10) + Math.round(85*Math.pow(L-10,2));
+  const base49 = expForLevel(10) + Math.round(85*Math.pow(39,2));
+  const hardStep = Math.round(85*2*39*5); // level-49→50 step jumps to 5x its old pace
+  const stepAt = m => Math.round(hardStep*(m+1)*(1+0.005*m));
+  if(L<=99) return base49 + stepAt(L-50); // gentle growth per level after that
+  const exp99 = base49 + stepAt(49);
+  const gap99to100 = stepAt(50) - stepAt(49);
+  const j = L-100;
+  const geoSum = (Math.pow(1.25, j+1) - 1) / 0.25; // 1 + 1.25 + 1.25^2 + ... + 1.25^j
+  return exp99 + Math.round(3*gap99to100*geoSum); // Lv.100 req = 3x original gap, then +25% per level after
+}
+function levelGradeBonus(level){
+  let secretBonus=0, primordialBonus=0;
+  if(level>=50) secretBonus += 1;
+  if(level>=100){ secretBonus += 1; primordialBonus += 1; }
+  return {secretBonus, primordialBonus};
+}
+function levelFromExp(totalExp){
+  let L=1;
+  while(expForLevel(L+1) <= totalExp) L++;
+  return L;
+}
+function expProgress(totalExp){
+  const L = levelFromExp(totalExp);
+  const cur = expForLevel(L), next = expForLevel(L+1);
+  return { level:L, cur, next, pct: Math.max(0,Math.min(100,(totalExp-cur)/(next-cur)*100)) };
+}
+function regionCatchCount(p, regionId){
+  return FISH.filter(f=>f.region===regionId).reduce((s,f)=> s+(p.dex[f.id]||0), 0);
+}
+function regionDexCount(p, regionId){
+  return FISH.filter(f=>f.region===regionId && p.dex[f.id]).length;
+}
+function isRegionUnlocked(p, region){
+  const lvl = expProgress(p.totalExp).level;
+  if(lvl < region.unlockLv) return false;
+  if(region.requireRegion){
+    if(region.requireDexCount!=null){
+      if(regionDexCount(p, region.requireRegion) < region.requireDexCount) return false;
+    } else if(region.requireCount!=null){
+      if(regionCatchCount(p, region.requireRegion) < region.requireCount) return false;
+    }
+  }
+  if(region.requireRegions){
+    for(const req of region.requireRegions){
+      if(req.dexCount!=null){
+        if(regionDexCount(p, req.region) < req.dexCount) return false;
+      } else if(req.count!=null){
+        if(regionCatchCount(p, req.region) < req.count) return false;
+      }
+    }
+  }
+  return true;
+}
+
+/* probability engine */
+function currentRod(profile){ return byId(RODS, profile.rod) || RODS[0]; }
+
+function computeWeights(regionId, rod, perfect){
+  const region = regionOf(regionId);
+  const w = {...region.weights};
+  if(rod.rareToSecretBonus){
+    ['rare','epic','legendary','secret'].forEach(g=>{
+      const shift = Math.min(w.common, rod.rareToSecretBonus);
+      w.common -= shift; w[g] += shift;
+    });
+  }
+  if(rod.primordialMult && w.primordial>0){
+    const extra = w.primordial*(rod.primordialMult-1);
+    w.primordial *= rod.primordialMult;
+    const others = GRADES.filter(g=>g!=='primordial');
+    const total = others.reduce((s,g)=>s+w[g],0);
+    if(total>0) others.forEach(g=> w[g] -= extra*(w[g]/total));
+  }
+  if(rod.legendaryPlusMult){
+    const targets = ['legendary','secret','primordial'];
+    let extra = 0;
+    targets.forEach(g=>{ if(w[g]>0){ const add = w[g]*(rod.legendaryPlusMult-1); extra += add; w[g] += add; } });
+    const others = GRADES.filter(g=>!targets.includes(g));
+    const total = others.reduce((s,g)=>s+w[g],0);
+    if(total>0) others.forEach(g=> w[g] -= extra*(w[g]/total));
+  }
+  const lvlBonus = levelGradeBonus(expProgress(profile.totalExp).level);
+  if(lvlBonus.secretBonus>0){
+    const shift = Math.min(w.common, lvlBonus.secretBonus);
+    w.common -= shift; w.secret += shift;
+  }
+  if(lvlBonus.primordialBonus>0){
+    const shift = Math.min(w.common, lvlBonus.primordialBonus);
+    w.common -= shift; w.primordial += shift;
+  }
+  if(profile.dexRewards.river){
+    ['legendary','secret','primordial'].forEach(g=>{
+      const shift = Math.min(w.common, 0.15);
+      w.common -= shift; w[g] += shift;
+    });
+  }
+  const titleEff = equippedTitleEffect();
+  if(titleEff.rareBonus){
+    ['rare','epic','legendary','secret'].forEach(g=>{
+      const shift = Math.min(w.common, titleEff.rareBonus);
+      w.common -= shift; w[g] += shift;
+    });
+  }
+  if(titleEff.legendaryBonus){
+    ['legendary','secret','primordial'].forEach(g=>{
+      const shift = Math.min(w.common, titleEff.legendaryBonus);
+      w.common -= shift; w[g] += shift;
+    });
+  }
+  if(titleEff.secretBonus){
+    const shift = Math.min(w.common, titleEff.secretBonus);
+    w.common -= shift; w.secret += shift;
+  }
+  if(titleEff.primordialBonus){
+    const shift = Math.min(w.common, titleEff.primordialBonus);
+    w.common -= shift; w.primordial += shift;
+  }
+  if(perfect){
+    const mult = rod.perfectMult || 1.5;
+    ['legendary','secret','primordial'].forEach(g=>{ if(w[g]>0) w[g]*=mult; });
+  }
+  GRADES.forEach(g=> w[g]=Math.max(w[g],0));
+  const total = GRADES.reduce((s,g)=>s+w[g],0) || 1;
+  GRADES.forEach(g=> w[g] = w[g]/total*100);
+  return w;
+}
+function pickGrade(weights){
+  const r = Math.random()*100; let acc=0;
+  for(const g of GRADES){ acc+=weights[g]; if(r<=acc) return g; }
+  return 'common';
+}
+function pickFish(regionId, grade){
+  const list = fishInRegion(regionId, grade);
+  if(!list.length) return null;
+  return list[Math.floor(Math.random()*list.length)];
+}
+function guaranteedGrade(regionId, rod, perfect){
+  const base = byId(CONSUMABLES,'guaranteedEpic').pool;
+  const pool = {};
+  Object.keys(base).forEach(g=>{ if(fishInRegion(regionId,g).length) pool[g]=base[g]; });
+  if(!Object.keys(pool).length) return null;
+  if(perfect){ const mult = rod.perfectMult||1.5; ['legendary','secret','primordial'].forEach(g=>{ if(pool[g]) pool[g]*=mult; }); }
+  const total = Object.values(pool).reduce((a,b)=>a+b,0);
+  let r = Math.random()*total, acc=0;
+  for(const g in pool){ acc+=pool[g]; if(r<=acc) return g; }
+  return Object.keys(pool)[0];
+}
+
+/* ---------- STORAGE ---------- */
+const STORE_KEY = 'fishlog_v1';
+function loadStore(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {profiles:{}, activeId:null}; }
+  catch(e){ return {profiles:{}, activeId:null}; }
+}
+function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
+
+function newProfile(name){
+  return {
+    id: uid(), name: name.slice(0,12), createdAt: Date.now(),
+    points: 0, totalExp: 0, region:'lake', rod:'bamboo', ownedRods:['bamboo'],
+    consumables:{bait25:0, guaranteedEpic:0, paradiseBait:0},
+    dex:{}, dexRewards:{}, fullDexReward:false,
+    cosmetics:{owned:[], equipped:{title:null}},
+    stats:{catches:0, misses:0}
+  };
+}
+
+function grantParadiseBaitGiftV1(p){
+  try{
+    if(!p || p.giftBaitV1) return;
+    if(!p.consumables) p.consumables = {bait25:0, guaranteedEpic:0, paradiseBait:0};
+    p.consumables.paradiseBait = (p.consumables.paradiseBait||0) + 4;
+    p.paradiseBaitSeen = true;
+    p.giftBaitV1 = true;
+    saveStore();
+  }catch(e){}
+}
+function grantParadiseBaitGiftV2(p){
+  try{
+    if(!p || p.giftBaitV2) return;
+    if(!p.consumables) p.consumables = {bait25:0, guaranteedEpic:0, paradiseBait:0};
+    p.consumables.paradiseBait = (p.consumables.paradiseBait||0) + 10;
+    p.paradiseBaitSeen = true;
+    p.giftBaitV2 = true;
+    saveStore();
+  }catch(e){}
+}
+function grantParadiseBaitGiftV3(p){
+  try{
+    if(!p || p.giftBaitV3) return;
+    if(!p.consumables) p.consumables = {bait25:0, guaranteedEpic:0, paradiseBait:0};
+    p.consumables.paradiseBait = (p.consumables.paradiseBait||0) + 100;
+    p.paradiseBaitSeen = true;
+    p.giftBaitV3 = true;
+    saveStore();
+  }catch(e){}
+}
+
+let store = loadStore();
+let profile = store.activeId ? store.profiles[store.activeId] : null;
+grantParadiseBaitGiftV1(profile);
+grantParadiseBaitGiftV2(profile);
+grantParadiseBaitGiftV3(profile);
+let localFeed = (()=>{ try{ return JSON.parse(localStorage.getItem('fishlog_feed_v1'))||[]; }catch(e){ return []; } })();
+function pushLocalFeed(entry){
+  localFeed.unshift(entry); localFeed = localFeed.slice(0,30);
+  try{ localStorage.setItem('fishlog_feed_v1', JSON.stringify(localFeed)); }catch(e){}
+}
+
+/* ---------- DB SYNC (best-effort family share) ---------- */
+let db = null, dbAvailable = false;
+let familyPlayers = [], familyState = {dex:{}, feed:[]};
+
+async function initDb(){
+  try{ db = await claude.use('db'); }catch(e){ db = null; }
+  dbAvailable = !!db;
+  renderSyncDot();
+  if(dbAvailable){
+    try{
+      db.collection('players').onSnapshot(snap=>{
+        familyPlayers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        renderRankIfActive(); renderDexIfActive();
+      }, ()=>{ dbAvailable=false; renderSyncDot(); });
+      db.doc('family/state').onSnapshot(snap=>{
+        familyState = snap.exists ? snap.data() : {dex:{}, feed:[]};
+        familyState.dex = familyState.dex || {}; familyState.feed = familyState.feed || [];
+        renderRankIfActive(); renderDexIfActive();
+      }, ()=>{ dbAvailable=false; renderSyncDot(); });
+      pushProfileToDb();
+    }catch(e){ dbAvailable=false; renderSyncDot(); }
+  }
+}
+async function pushProfileToDb(){
+  if(!dbAvailable || !profile) return;
+  try{
+    await db.collection('players').doc(profile.id).set({
+      name:profile.name, points:profile.points, totalExp:profile.totalExp,
+      level:expProgress(profile.totalExp).level, dexCount:Object.keys(profile.dex).length,
+      title: profile.cosmetics.equipped.title, updatedAt: Date.now()
+    });
+  }catch(e){}
+}
+async function pushCatchToFamily(fish, grade, points, perfect, traits){
+  if(!dbAvailable) return;
+  try{
+    const ref = db.doc('family/state');
+    const snap = await ref.get();
+    const data = snap.exists ? (snap.data()||{}) : {};
+    const dex = data.dex || {};
+    const prev = dex[fish.id] || {count:0, firstBy:profile.name, firstAt:Date.now()};
+    dex[fish.id] = {count:(prev.count||0)+1, firstBy:prev.firstBy||profile.name, firstAt:prev.firstAt||Date.now()};
+    const feed = [{ts:Date.now(), player:profile.name, fish:fish.name, grade, points, perfect, trait: traits&&traits.length ? traits.map(t=>t.name).join(' ') : null}, ...(data.feed||[])].slice(0,30);
+    await ref.set({dex, feed, updatedAt:Date.now()});
+  }catch(e){}
+}
+function renderSyncDot(){
+  const dot = $('#sync-dot');
+  if(!dot) return;
+  dot.classList.toggle('on', dbAvailable);
+  dot.title = dbAvailable ? '가족과 실시간 공유 중' : '이 기기에만 저장됨';
+}
+
+function familyMembers(){
+  const map = new Map();
+  Object.values(store.profiles).forEach(p=> map.set(p.id, {
+    id:p.id, name:p.name, points:p.points, level:expProgress(p.totalExp).level,
+    dexCount:Object.keys(p.dex).length, title:p.cosmetics.equipped.title, local:true
+  }));
+  familyPlayers.forEach(p=>{
+    if(!map.has(p.id)) map.set(p.id, {id:p.id, name:p.name, points:p.points||0, level:p.level||1, dexCount:p.dexCount||0, title:p.title, local:false});
+  });
+  return Array.from(map.values());
+}
+function familyDexCount(fishId){
+  let c=0;
+  Object.values(store.profiles).forEach(p=>{ c += p.dex[fishId]||0; });
+  c += (familyState.dex[fishId] && familyState.dex[fishId].count) || 0;
+  return c;
+}
+function combinedFeed(){
+  const localEntries = localFeed.map(e=>({...e}));
+  const dbEntries = familyState.feed || [];
+  const all = [...localEntries, ...dbEntries];
+  all.sort((a,b)=>b.ts-a.ts);
+  const seen = new Set(); const out=[];
+  for(const e of all){ const k=e.ts+'|'+e.player+'|'+e.fish; if(seen.has(k)) continue; seen.add(k); out.push(e); if(out.length>=20) break; }
+  return out;
+}
+
+/* ---------- UI STATE ---------- */
+let activeTab = 'fish';
+let dexRegionTab = 'lake';
+let dexScope = 'family';
+let castState = 'idle'; // idle | waiting | biting | resolving
+let biteAnim = null;
+let sceneTimers = [];
+
+function toast(msg, dur){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._h); toast._h = setTimeout(()=>t.classList.remove('show'), dur||2200);
+}
+function openSheet(html){ $('#sheet').innerHTML = html; $('#modal-layer').classList.add('show'); }
+function closeSheet(){ $('#modal-layer').classList.remove('show'); }
+$('#modal-backdrop').addEventListener('click', closeSheet);
+
+/* ---------- ONBOARDING / PROFILE SWITCH ---------- */
+function ensureProfile(){
+  if(profile) return;
+  openSheet(`
+    <h2>우리 가족 낚시일지</h2>
+    <div class="sub">낚시할 가족 이름을 알려주세요. 이 기기에서 이 이름으로 기록이 쌓여요.</div>
+    <input type="text" id="onb-name" placeholder="예: 아빠, 엄마, 첫째" maxlength="12" autofocus>
+    <button class="sheet-close" id="onb-go">시작하기</button>
+  `);
+  $('#onb-go').onclick = ()=>{
+    const v = $('#onb-name').value.trim();
+    if(!v){ toast('이름을 입력해주세요'); return; }
+    createAndSwitch(v);
+    closeSheet();
+  };
+}
+function createAndSwitch(name){
+  const p = newProfile(name);
+  store.profiles[p.id] = p; store.activeId = p.id; profile = p;
+  saveStore();
+  pushProfileToDb();
+  renderAll();
+}
+function switchProfile(id){
+  store.activeId = id; profile = store.profiles[id]; saveStore();
+  grantParadiseBaitGiftV1(profile);
+  grantParadiseBaitGiftV2(profile);
+  grantParadiseBaitGiftV3(profile);
+  pushProfileToDb();
+  closeSheet(); renderAll();
+}
+function openProfileSwitcher(){
+  const rows = Object.values(store.profiles).map(p=>{
+    const lv = expProgress(p.totalExp).level;
+    return `<div class="profile-row ${p.id===profile.id?'active':''}" data-id="${p.id}">
+      <div class="pname">${escapeHtml(p.name)}</div><div class="plv tabular">Lv.${lv} · ${fmt(p.points)}P</div>
+    </div>`;
+  }).join('');
+  openSheet(`
+    <h2>낚시하는 가족</h2>
+    <div class="sub">이 기기에서 저장된 프로필이에요. 다른 가족이 사용하려면 새로 추가하세요.</div>
+    <div class="profile-list">${rows}</div>
+    <button class="big-btn" id="add-profile">+ 새 가족 프로필 추가</button>
+    <button class="sheet-close ghost" id="close-switch">닫기</button>
+  `);
+  $('#close-switch').onclick = closeSheet;
+  $('#add-profile').onclick = ()=>{
+    openSheet(`
+      <h2>새 가족 프로필</h2>
+      <div class="sub">이 기기에서 함께 낚시할 가족의 이름을 입력하세요.</div>
+      <input type="text" id="np-name" placeholder="이름" maxlength="12" autofocus>
+      <button class="sheet-close" id="np-go">추가하기</button>
+    `);
+    $('#np-go').onclick = ()=>{
+      const v = $('#np-name').value.trim();
+      if(!v){ toast('이름을 입력해주세요'); return; }
+      createAndSwitch(v);
+    };
+  };
+  document.querySelectorAll('.profile-row').forEach(r=> r.onclick = ()=> switchProfile(r.dataset.id));
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ---------- RENDER: TOPBAR ---------- */
+function renderTopbar(){
+  $('#name-text').textContent = profile.name;
+  const prog = expProgress(profile.totalExp);
+  $('#lv-text').textContent = 'Lv.' + prog.level;
+  $('#exp-fill').style.width = prog.pct + '%';
+  $('#points-val').textContent = fmt(profile.points);
+  $('#avatar-btn').textContent = profile.name[0];
+  const title = COSMETICS.find(c=>c.id===profile.cosmetics.equipped.title);
+  $('#title-tag').textContent = title ? title.name : '';
+  renderSyncDot();
+
+  const wrap = $('#region-tabs'); wrap.innerHTML='';
+  REGIONS.forEach(r=>{
+    const unlocked = isRegionUnlocked(profile, r);
+    const tab = el('div', 'region-tab' + (r.id===profile.region?' active':'') + (unlocked?'':' locked'));
+    if(r.id===profile.region) tab.style.setProperty('--rt-accent', r.accent);
+    let sub;
+    const paradiseBaitCount = r.needsBait ? (profile.consumables.paradiseBait||0) : 0;
+    if(r.needsBait && (unlocked || paradiseBaitCount>0)){
+      sub = '미끼 '+paradiseBaitCount+'개';
+    }
+    else if(unlocked) sub = r.id===profile.region ? '낚시중' : ('Lv.'+r.unlockLv+'~');
+    else if(prog.level < r.unlockLv) sub = 'Lv.'+r.unlockLv;
+    else if(r.requireRegions) sub = r.requireRegions.map(req=> req.dexCount!=null
+      ? regionOf(req.region).name+' 도감 '+regionDexCount(profile,req.region)+'/'+req.dexCount
+      : regionOf(req.region).name+' '+regionCatchCount(profile,req.region)+'/'+req.count).join(' · ');
+    else if(r.requireDexCount!=null) sub = regionOf(r.requireRegion).name+' 도감 '+regionDexCount(profile,r.requireRegion)+'/'+r.requireDexCount;
+    else sub = regionOf(r.requireRegion).name+' '+regionCatchCount(profile,r.requireRegion)+'/'+r.requireCount;
+    tab.innerHTML = `<span class="rt-name">${unlocked?r.name:'🔒'}</span><span class="rt-sub">${sub}</span>`;
+    tab.onclick = ()=>{
+      if(!unlocked){
+        if(prog.level < r.unlockLv) toast('레벨 '+r.unlockLv+'부터 갈 수 있어요');
+        else if(r.requireRegions) toast(r.requireRegions.map(req=> regionOf(req.region).name+' 도감 '+(req.dexCount!=null?req.dexCount+'종':req.count+'마리')).join(', ')+' 이상 채워야 해요');
+        else if(r.requireDexCount!=null) toast(regionOf(r.requireRegion).name+' 도감을 '+r.requireDexCount+'종 이상 채워야 해요');
+        else toast(regionOf(r.requireRegion).name+'에서 '+r.requireCount+'마리 이상 잡아야 해요');
+        return;
+      }
+      profile.region=r.id; saveStore(); renderAll();
+    };
+    wrap.appendChild(tab);
+  });
+}
+function renderRankIfActive(){ if(activeTab==='rank') renderRank(); }
+function renderDexIfActive(){ if(activeTab==='dex') renderDex(); }
+
+/* ---------- RENDER: FISHING ---------- */
+const CAST_ROD = [66,78];
+const CAST_PATHS = {
+  lake:{land:[250,120], dur:0.9, peak:[160,40]},
+  river:{land:[270,122], dur:0.85, peak:[170,30]},
+  sea:{land:[300,116], dur:1.05, peak:[180,20]},
+  polar:{land:[280,118], dur:1.0, peak:[175,25]},
+  paradise:{land:[260,118], dur:0.95, peak:[165,35]},
+};
+function starsHTML(density){
+  const pos=[[8,12],[22,6],[35,18],[50,8],[64,15],[78,5],[90,20],[15,28],[45,25],[70,30],[30,35],[85,32],[5,22],[60,22]];
+  const n = Math.round(pos.length*density);
+  return pos.slice(0,n).map(([x,y],i)=>`<span class="star" style="left:${x}%;top:${y}%;animation-delay:${(i%5)*0.4}s"></span>`).join('');
+}
+function abyssGlowDots(){
+  const pos=[[15,55],[75,60],[35,72],[60,50],[85,68],[10,78]];
+  const colors=['#4fd6c4','#8f7fd6','#4fd6c4','#8f7fd6','#4fd6c4','#8f7fd6'];
+  return pos.map(([x,y],i)=>`<span class="glow-dot" style="left:${x}%;top:${y}%;background:${colors[i]};box-shadow:0 0 8px 2px ${colors[i]};animation-delay:${i*0.4}s"></span>`).join('');
+}
+function sceneAmbientHTML(region){
+  if(region.id==='abyss'){
+    return `<div class="abyss-vignette"></div>${starsHTML(1)}${abyssGlowDots()}
+      <div class="sub-anchor"><svg class="submersible" viewBox="0 0 60 50"><ellipse cx="30" cy="24" rx="22" ry="13" fill="#2a3350"/><rect x="24" y="9" width="12" height="13" rx="3" fill="#1c2340"/><circle cx="30" cy="15" r="4" fill="#7fd6e8" opacity=".85"/></svg></div>`;
+  }
+  const mountains = `<svg class="mountains" viewBox="0 0 400 200" preserveAspectRatio="none">
+      <path d="M0,150 L60,95 L110,140 L170,80 L230,145 L290,100 L340,150 L400,120 L400,200 L0,200 Z" fill="rgba(0,0,0,.20)"/>
+      <path d="M0,172 L80,122 L150,166 L220,112 L300,168 L400,142 L400,200 L0,200 Z" fill="rgba(0,0,0,.36)"/>
+    </svg>`;
+  const sunX = region.id==='lake' ? 78 : 20;
+  const glow = region.sun ? `<div class="sky-glow" style="left:${sunX}%; top:14%; background:${region.sun.color}; box-shadow:0 0 44px 18px ${region.sun.glow};"></div>` : '';
+  const stars = region.stars>0 ? starsHTML(region.stars) : '';
+  return `${mountains}${glow}${stars}<div class="water-band"></div>`;
+}
+function rodSVG(){
+  return `<div class="rig" id="rig"><svg viewBox="0 0 130 210">
+    <ellipse cx="26" cy="192" rx="16" ry="13" fill="#242424"/>
+    <circle cx="26" cy="192" r="16" fill="none" stroke="#111" stroke-width="2"/>
+    <line x1="10" y1="192" x2="0" y2="180" stroke="#242424" stroke-width="5" stroke-linecap="round"/>
+    <path id="rod-path" d="M22,196 Q40,110 56,44" fill="none" stroke="#2f2f2f" stroke-width="6" stroke-linecap="round"/>
+    <path id="rod-path2" d="M22,196 Q40,110 56,44" fill="none" stroke="#606060" stroke-width="2" stroke-linecap="round"/>
+  </svg></div>`;
+}
+function updateRodBend(tension){
+  const rig = $('#rig'); if(!rig) return;
+  const t = Math.max(0, Math.min(100, tension||0))/100;
+  const ctrlX = (40 + t*20).toFixed(1), ctrlY = (110 - t*16).toFixed(1);
+  const tipX = (56 + t*28).toFixed(1), tipY = (44 + t*34).toFixed(1);
+  const d = `M22,196 Q${ctrlX},${ctrlY} ${tipX},${tipY}`;
+  const p1=$('#rod-path'), p2=$('#rod-path2');
+  if(p1) p1.setAttribute('d', d);
+  if(p2) p2.setAttribute('d', d);
+}
+function arcPath(rod, land, peak){ return `M${rod[0]},${rod[1]} Q${peak[0]},${peak[1]} ${land[0]},${land[1]}`; }
+function clearScene(){
+  sceneTimers.forEach(t=>clearTimeout(t)); sceneTimers=[];
+  const svg = $('#cast-svg'); if(svg) svg.innerHTML='';
+  const sp = $('#splash-layer'); if(sp) sp.innerHTML='';
+}
+function landingFX(regionId, pct){
+  const sp = $('#splash-layer'); if(!sp) return;
+  if(regionId==='abyss'){
+    startBubbleLoop(pct);
+  } else {
+    for(let i=0;i<3;i++){
+      const r = el('div','splash-ring');
+      r.style.left = pct[0]+'%'; r.style.top = pct[1]+'%'; r.style.animationDelay=(i*0.15)+'s';
+      sp.appendChild(r);
+    }
+    for(let i=0;i<6;i++){
+      const d = el('div','droplet');
+      const ang = Math.random()*Math.PI*2, dist=10+Math.random()*10;
+      d.style.setProperty('--dx', (Math.cos(ang)*dist)+'px');
+      d.style.setProperty('--dy', (Math.sin(ang)*dist-6)+'px');
+      d.style.left = pct[0]+'%'; d.style.top = pct[1]+'%';
+      sp.appendChild(d);
+    }
+    const loop = el('div','splash-ring loop');
+    loop.style.left = pct[0]+'%'; loop.style.top = pct[1]+'%';
+    sp.appendChild(loop);
+  }
+}
+function startBubbleLoop(pct){
+  const tick = ()=>{
+    const sp = $('#splash-layer');
+    if(!sp || castState==='idle') return;
+    const b = el('div','bubble');
+    b.style.left = (pct[0] + (Math.random()*6-3)) + '%';
+    b.style.top = pct[1]+'%';
+    sp.appendChild(b);
+    setTimeout(()=>{ try{ b.remove(); }catch(e){} }, 1700);
+    sceneTimers.push(setTimeout(tick, 480));
+  };
+  sceneTimers.push(setTimeout(tick, 300));
+}
+function playCastAnim(regionId){
+  const svg = $('#cast-svg'); if(!svg) return;
+  if(regionId==='abyss'){
+    const rodPt=[200,4], land=[200,168], dur=1.3;
+    const d = `M${rodPt[0]},${rodPt[1]} L${land[0]},${land[1]}`;
+    svg.innerHTML = `<circle r="4.5" fill="var(--gold)"><animateMotion dur="${dur}s" fill="freeze" path="${d}"/></circle>`;
+    sceneTimers.push(setTimeout(()=> landingFX(regionId, [land[0]/4, land[1]/2]), dur*1000));
+  } else {
+    const cfg = CAST_PATHS[regionId];
+    const d = arcPath(CAST_ROD, cfg.land, cfg.peak);
+    svg.innerHTML = `<circle r="4" fill="var(--gold)"><animateMotion dur="${cfg.dur}s" begin="0.15s" fill="freeze" path="${d}"/></circle>`;
+    sceneTimers.push(setTimeout(()=> landingFX(regionId, [cfg.land[0]/4, cfg.land[1]/2]), (cfg.dur+0.15)*1000));
+  }
+}
+
+function renderFish(){
+  const region = regionOf(profile.region);
+  const c = $('#content'); c.innerHTML = '';
+  const baitLeft = profile.consumables.bait25||0;
+  const paradiseBaitLeft = profile.consumables.paradiseBait||0;
+  const card = el('div','card');
+  const sky = `linear-gradient(180deg, ${region.sky[0]} 0%, ${region.sky[1]} 34%, ${region.sky[2]} 68%, ${region.sky[3]} 100%)`;
+  card.innerHTML = `
+    <div id="scene" style="--scene-bg:${sky}">
+      ${sceneAmbientHTML(region)}
+      <svg id="cast-svg" viewBox="0 0 400 200" preserveAspectRatio="none"></svg>
+      <div id="splash-layer"></div>
+      ${region.id!=='abyss' ? rodSVG() : ''}
+      <div class="scene-fg">
+        <div id="scene-region">${region.name} · Lv.${region.unlockLv}+${region.needsBait ? ` · 미끼 ${paradiseBaitLeft}개` : ''}</div>
+        <div id="scene-title" class="display">${castState==='biting' ? '손맛이 왔다!' : '오늘의 손맛'}</div>
+        <div id="scene-status"></div>
+        <div id="tension-wrap"><div id="tension-track"></div></div>
+        <button id="cast-btn">낚싯줄 던지기</button>
+        <button id="hook-btn" style="display:none">챔질!</button>
+        <div><button id="odds-btn">이 구역 확률 보기</button></div>
+      </div>
+    </div>
+    ${baitLeft>0 ? `<div class="section-title">활성 아이템</div><div class="card" style="padding:10px 14px;">🎣 2.5배 포인트 미끼 · 남은 횟수 ${baitLeft}</div>` : ''}
+  `;
+  c.appendChild(card);
+  const oddsBtnEl = $('#odds-btn'); if(oddsBtnEl) oddsBtnEl.onclick = showOdds;
+  const castBtnEl = $('#cast-btn'); if(castBtnEl) castBtnEl.onclick = startCast;
+  const hookBtnEl = $('#hook-btn'); if(hookBtnEl) hookBtnEl.onclick = doHook;
+  applyCastVisualState();
+}
+function applyCastVisualState(){
+  const castBtn = $('#cast-btn'), hookBtn = $('#hook-btn'), status = $('#scene-status'), tw = $('#tension-wrap');
+  if(!castBtn) return;
+  if(castState==='idle'){
+    castBtn.style.display=''; castBtn.disabled=false; castBtn.textContent='낚싯줄 던지기';
+    hookBtn.style.display='none'; tw.classList.remove('show');
+    status.textContent='';
+    clearScene();
+    updateRodBend(0);
+  } else if(castState==='waiting'){
+    castBtn.style.display=''; castBtn.disabled=true; castBtn.textContent='기다리는 중…';
+    hookBtn.style.display='none'; tw.classList.remove('show');
+    status.textContent = profile.region==='abyss' ? '...가라앉는 중...' : '...조용하다...';
+  } else if(castState==='biting'){
+    castBtn.style.display='none'; hookBtn.style.display='';
+    tw.classList.add('show');
+    status.textContent='지금이다! 타이밍을 노려보세요';
+  }
+}
+function showOdds(){
+  const rod = currentRod(profile);
+  const w = computeWeights(profile.region, rod, false);
+  const wPerfect = computeWeights(profile.region, rod, true);
+  const rows = GRADES.map(g=>`<tr><td><span class="grade-chip" style="background:var(${GRADE_VAR[g]})">${GRADE_LABEL[g]}</span></td><td>${w[g].toFixed(1)}%</td><td style="color:var(--gold)">${wPerfect[g].toFixed(1)}%</td></tr>`).join('');
+  const traitMult = equippedTitleEffect().traitMult||1;
+  const traitRows = TRAITS.map(t=>`<tr><td><span style="color:${t.color};font-weight:700;">${t.name}</span></td><td colspan="2">${(t.chance*traitMult).toFixed(2)}% · 포인트·경험치 ${t.mult}배</td></tr>`).join('');
+  const currentRegion = regionOf(profile.region);
+  let baitHtml = '';
+  if(!currentRegion.needsBait && profile.region!=='lake'){
+    const dropChance = (PARADISE_BAIT_DROP_BY_REGION[profile.region]||0) + (equippedTitleEffect().baitDropBonus||0) + (profile.dexRewards.allButParadise ? 1 : 0);
+    baitHtml = `
+      <div class="sub" style="margin-top:14px;">잡을 때마다 낙원 전용 미끼도 확률로 함께 나와요.</div>
+      <table class="odds-table"><tr><td>낙원 전용 미끼</td><td colspan="2">${dropChance.toFixed(2)}%</td></tr></table>`;
+  }
+  openSheet(`
+    <h2>${currentRegion.name} 확률표</h2>
+    <div class="sub">현재 장착한 ${currentRod(profile).name} 기준이에요. 완벽 타이밍 시 전설 이상 확률이 올라가요.</div>
+    <table class="odds-table"><tr><td></td><td>기본</td><td style="color:var(--gold)">완벽 타이밍</td></tr>${rows}</table>
+    <div class="sub" style="margin-top:14px;">등급과 별개로, 잡을 때마다 특성이 붙을 수 있어요.</div>
+    <table class="odds-table">${traitRows}</table>
+    ${baitHtml}
+    <button class="sheet-close" onclick="document.getElementById('modal-layer').classList.remove('show')">닫기</button>
+  `);
+}
+
+function startCast(){
+  if(castState!=='idle') return;
+  const region = regionOf(profile.region);
+  if(region.needsBait){
+    if((profile.consumables.paradiseBait||0) <= 0){
+      toast('낙원 전용 미끼가 있어야 낙원에서 낚시할 수 있어요');
+      return;
+    }
+    profile.consumables.paradiseBait--;
+    saveStore();
+    const sceneRegionEl = $('#scene-region');
+    if(sceneRegionEl) sceneRegionEl.textContent = `${region.name} · Lv.${region.unlockLv}+ · 미끼 ${profile.consumables.paradiseBait}개`;
+  }
+  castState='waiting'; applyCastVisualState();
+  clearScene();
+  playCastAnim(profile.region);
+  const rod = currentRod(profile);
+  let wait = 1000 + Math.random()*1200;
+  if(rod.castTimeCut) wait *= (1-rod.castTimeCut);
+  if(equippedTitleEffect().castTimeCut) wait *= (1-equippedTitleEffect().castTimeCut);
+  setTimeout(()=>{
+    if(castState!=='waiting' || !$('#tension-track')) return;
+    castState='biting'; applyCastVisualState();
+    beginTension();
+  }, wait);
+}
+
+function beginTension(){
+  const track = $('#tension-track');
+  if(!track) return;
+  track.innerHTML = '<div id="marker"></div>';
+  const rod = currentRod(profile);
+  const zoneMult = 1 + (rod.zoneBonus||0) + (equippedTitleEffect().zoneBonus||0);
+  let perfectW = 9.5*zoneMult, goodW = 30*zoneMult;
+  const center = 25 + Math.random()*50;
+  const perfectStart = center - perfectW/2, goodStart = center - goodW/2;
+  const zg = el('div','zone good'); zg.style.left=Math.max(0,goodStart)+'%'; zg.style.width=Math.min(100,goodW)+'%';
+  const zp = el('div','zone perfect'); zp.style.left=Math.max(0,perfectStart)+'%'; zp.style.width=Math.min(100,perfectW)+'%';
+  track.appendChild(zg); track.appendChild(zp); track.appendChild(document.getElementById('marker'));
+
+  const regionIdx = REGIONS.findIndex(r=>r.id===profile.region);
+  const speed = 1500 - regionIdx*160;
+  const startT = performance.now();
+  const marker = document.getElementById('marker');
+  let dead = false;
+  biteAnim = { perfectStart, perfectW, goodStart, goodW, pos:0 };
+
+  function frame(t){
+    if(dead) return;
+    const el2 = t - startT;
+    const cyc = el2 % (speed*2);
+    const pos = cyc < speed ? (cyc/speed)*100 : 100-((cyc-speed)/speed)*100;
+    biteAnim.pos = pos;
+    if(marker) marker.style.left = 'calc(' + pos + '% - 2px)';
+    updateRodBend(pos);
+    if(el2 > speed*2*2.4){
+      dead = true; castState='resolving'; applyCastVisualState();
+      resolveCast(null);
+      return;
+    }
+    biteAnim.raf = requestAnimationFrame(frame);
+  }
+  biteAnim.raf = requestAnimationFrame(frame);
+  biteAnim.kill = ()=>{ dead=true; if(biteAnim.raf) cancelAnimationFrame(biteAnim.raf); };
+}
+
+function doHook(){
+  if(castState!=='biting' || !biteAnim) return;
+  const pos = biteAnim.pos;
+  biteAnim.kill();
+  castState='resolving'; applyCastVisualState();
+  const inPerfect = pos >= biteAnim.perfectStart && pos <= biteAnim.perfectStart+biteAnim.perfectW;
+  const inGood = pos >= biteAnim.goodStart && pos <= biteAnim.goodStart+biteAnim.goodW;
+  resolveCast(inPerfect ? 'perfect' : (inGood ? 'good' : null));
+}
+
+function resolveCast(hit){
+  const guaranteed = profile.consumables.guaranteedEpic > 0;
+  if(!hit && !guaranteed){
+    if(navigator.vibrate) try{navigator.vibrate(40);}catch(e){}
+    profile.stats.misses++; saveStore();
+    toast('아깝다! 놓쳤어요');
+    castState='idle'; applyCastVisualState();
+    return;
+  }
+  const paradiseRegion = regionOf(profile.region);
+  const prevUnlocked = new Set(REGIONS.filter(r=>isRegionUnlocked(profile,r)).map(r=>r.id));
+  const perfect = hit==='perfect';
+  const rod = currentRod(profile);
+  let grade;
+  if(guaranteed){
+    grade = guaranteedGrade(profile.region, rod, perfect);
+    profile.consumables.guaranteedEpic--;
+  } else {
+    const w = computeWeights(profile.region, rod, perfect);
+    grade = pickGrade(w);
+  }
+  let fish = pickFish(profile.region, grade);
+  if(!fish){
+    for(const g of [...GRADES].reverse()){ fish = pickFish(profile.region, g); if(fish) break; }
+  }
+  const prevLevel = expProgress(profile.totalExp).level;
+  const traits = rollTraits();
+  let mult = 1;
+  if(profile.consumables.bait25 > 0){
+    mult = byId(CONSUMABLES,'bait25').value;
+    profile.consumables.bait25--;
+  }
+  const titleEff = equippedTitleEffect();
+  if(profile.dexRewards.lake) mult *= 1.2;
+  if(rod.pointsMult) mult *= rod.pointsMult;
+  if(titleEff.pointsMult) mult *= titleEff.pointsMult;
+  traits.forEach(t=> mult *= t.mult);
+  const gainedPoints = Math.round(fish.points*mult);
+  let expMult = (profile.dexRewards.sea ? 1.4 : 1) * (titleEff.expMult||1);
+  traits.forEach(t=> expMult *= t.mult);
+  const isFirst = !profile.dex[fish.id];
+  profile.points += gainedPoints;
+  profile.totalExp += Math.round(fish.points*expMult);
+  profile.dex[fish.id] = (profile.dex[fish.id]||0)+1;
+  profile.stats.catches++;
+  let gotParadiseBait = false;
+  if(!paradiseRegion.needsBait && profile.region!=='lake'){
+    const dropChance = (PARADISE_BAIT_DROP_BY_REGION[profile.region]||0) + (equippedTitleEffect().baitDropBonus||0) + (profile.dexRewards.allButParadise ? 1 : 0);
+    if(Math.random()*100 < dropChance){
+      profile.consumables.paradiseBait = (profile.consumables.paradiseBait||0)+1;
+      profile.paradiseBaitSeen = true;
+      gotParadiseBait = true;
+    }
+  }
+  saveStore();
+
+  const newlyUnlocked = REGIONS.filter(r=> !prevUnlocked.has(r.id) && isRegionUnlocked(profile,r));
+  const traitNameStr = traits.length ? traits.map(t=>t.name).join(' ') : null;
+
+  if(navigator.vibrate) try{navigator.vibrate(perfect?[30,40,60]:[25]);}catch(e){}
+  pushLocalFeed({ts:Date.now(), player:profile.name, fish:fish.name, grade, points:gainedPoints, perfect, trait: traitNameStr});
+  pushProfileToDb();
+  pushCatchToFamily(fish, grade, gainedPoints, perfect, traits);
+
+  showCatchModal(fish, grade, gainedPoints, perfect, isFirst, traits, ()=>{
+    checkDexRewards();
+    const newLevel = expProgress(profile.totalExp).level;
+    if(newLevel > prevLevel || newlyUnlocked.length){ showProgress(prevLevel, newLevel, newlyUnlocked); }
+    else { castState='idle'; renderAll(); }
+    if(gotParadiseBait) toast('낙원 전용 미끼를 얻었어요!');
+    if(grade==='primordial') showCelebrate(fish, traits);
+  });
+}
+
+function showCatchModal(fish, grade, points, perfect, isFirst, traits, onClose){
+  const nameTags = traits.map(t=>`<span style="color:${t.color}">${t.name}</span>`).join(' ');
+  const traitBadges = traits.map(t=>`<div class="perfect-badge" style="background:${t.color};margin:4px 3px 0;">${t.name} 특성!</div>`).join('');
+  openSheet(`
+    <div class="catch-fish-wrap">
+      ${fishIconStyled(fish, traits, 130)}
+      <span class="grade-chip" style="background:var(${GRADE_VAR[grade]})">${GRADE_LABEL[grade]}</span>
+      <h2 class="catch-name">${nameTags?nameTags+' ':''}${fish.name}</h2>
+      <div class="catch-pts tabular">+${fmt(points)}P · EXP +${fmt(fish.points)}</div>
+      <div>${perfect?'<div class="perfect-badge" style="margin:4px 3px 0;">완벽 타이밍!</div>':''}${traitBadges}</div>
+      ${isFirst?'<div class="lock-note">도감에 새로 기록되었어요</div>':''}
+      ${fish.fact && isFirst ? `<div class="fact-box">${fish.fact}</div>` : ''}
+    </div>
+    <button class="sheet-close" id="catch-ok">확인</button>
+  `);
+  $('#catch-ok').onclick = ()=>{ closeSheet(); onClose(); };
+}
+function showProgress(prevLv, newLv, newlyUnlocked){
+  let rewardHtml = '';
+  if(newLv>prevLv){
+    const reward = 20*newLv;
+    profile.points += reward;
+    const milestoneCount = Math.max(0, Math.floor(newLv/25) - Math.floor(Math.max(prevLv,99)/25));
+    let baitStr = '';
+    if(milestoneCount>0){
+      if(!profile.consumables) profile.consumables = {bait25:0, guaranteedEpic:0, paradiseBait:0};
+      profile.consumables.paradiseBait = (profile.consumables.paradiseBait||0) + milestoneCount;
+      profile.paradiseBaitSeen = true;
+      baitStr = ` · 낙원 전용 미끼 +${milestoneCount}개`;
+    }
+    saveStore();
+    rewardHtml = `<div class="sub">레벨 업! Lv.${newLv} · 보너스 포인트 +${fmt(reward)}P${baitStr}</div>`;
+  }
+  const unlockHtml = newlyUnlocked.map(r=>`<div class="card" style="text-align:center;padding:20px;margin-top:10px;"><div class="display" style="font-size:20px;">${r.name} 해금!</div><div class="lock-note">이제 ${r.name}에서 낚시할 수 있어요</div></div>`).join('');
+  openSheet(`
+    <h2>${newLv>prevLv? '레벨 업!' : '지역 해금!'}</h2>
+    ${rewardHtml}
+    ${unlockHtml}
+    <button class="sheet-close" id="prog-ok">계속하기</button>
+  `);
+  $('#prog-ok').onclick = ()=>{ closeSheet(); castState='idle'; renderAll(); };
+}
+function showCelebrate(fish, traits){
+  traits = traits || [];
+  const nameTags = traits.map(t=>`<span style="color:${t.color}">${t.name}</span>`).join(' ');
+  $('#celebrate-card').innerHTML = `
+    ${fishIconStyled(fish, traits, 170)}
+    <h2>태초 등급 발견!</h2>
+    <div style="font-size:18px;">${nameTags?nameTags+' ':''}${fish.name}</div>
+    <p>가족 랭킹의 최근 기록 피드에 남겨졌어요. 다음에 접속하는 가족에게도 보일 거예요!</p>
+    <button class="sheet-close" id="cel-ok" style="max-width:220px;margin:18px auto 0;">기뻐하기</button>
+  `;
+  $('#celebrate').classList.add('show');
+  $('#cel-ok').onclick = ()=> $('#celebrate').classList.remove('show');
+}
+const REGION_DEX_PERK = {
+  lake:'영구 포인트 1.2배', river:'영구 전설 이상 확률 +0.15%p', sea:'영구 EXP 1.4배', abyss:'', polar:'', paradise:''
+};
+function checkDexRewards(){
+  REGIONS.forEach(r=>{
+    if(profile.dexRewards[r.id]) return;
+    const total = FISH.filter(f=>f.region===r.id).length;
+    const have = FISH.filter(f=>f.region===r.id && profile.dex[f.id]).length;
+    if(have>=total && total>0){
+      profile.dexRewards[r.id]=true; profile.points += 1000;
+      const perk = REGION_DEX_PERK[r.id];
+      let extra = '';
+      if(r.id==='paradise' && !profile.cosmetics.owned.includes('title_enlightened')){
+        profile.cosmetics.owned.push('title_enlightened');
+        extra = ' · "낚시의 이치를 깨달은 자" 칭호 획득';
+      }
+      saveStore();
+      toast(r.name+' 도감 완성! +1000P'+(perk?' · '+perk+' 획득':'')+extra);
+    }
+  });
+  if(!profile.dexRewards.allButParadise && REGIONS.filter(r=>r.id!=='paradise').every(r=>profile.dexRewards[r.id])){
+    profile.dexRewards.allButParadise = true;
+    saveStore();
+    toast('낙원 제외 모든 도감 완성! 영구 낙원 전용 미끼 드롭 확률 +1%p 획득');
+  }
+  if(!profile.fullDexReward && FISH.every(f=>profile.dex[f.id])){
+    profile.fullDexReward = true; profile.points += 5000;
+    if(!profile.cosmetics.owned.includes('title_hof')) profile.cosmetics.owned.push('title_hof');
+    saveStore();
+    toast('전체 도감 완성! 명예의 전당 등록 +5000P');
+  }
+}
+
+/* ---------- RENDER: SHOP ---------- */
+function renderShop(){
+  const c = $('#content'); c.innerHTML='';
+  const wrap = el('div');
+
+  wrap.appendChild(el('div','section-title','소모품'));
+  const consCard = el('div','card');
+  CONSUMABLES.forEach(item=>{
+    const owned = profile.consumables[item.id]||0;
+    const row = el('div','shop-item');
+    row.innerHTML = `
+      <div class="shop-icon">🎣</div>
+      <div class="shop-info"><div class="shop-name">${item.name}${owned?` <span class="lock-note">보유 ${owned}</span>`:''}</div><div class="shop-desc">${item.desc}</div></div>
+      <div class="shop-buy"><button class="buy-btn" data-id="${item.id}">구매</button><div class="price-tag tabular">${fmt(item.price)}P</div></div>
+    `;
+    consCard.appendChild(row);
+  });
+  wrap.appendChild(consCard);
+
+  wrap.appendChild(el('div','section-title','낚싯대 (하나만 장착)'));
+  const rodCard = el('div','card');
+  RODS.forEach(r=>{
+    const owned = profile.ownedRods.includes(r.id);
+    const equipped = profile.rod===r.id;
+    const row = el('div','shop-item');
+    row.innerHTML = `
+      <div class="shop-icon">🎣</div>
+      <div class="shop-info"><div class="shop-name">${r.name}</div><div class="shop-desc">${r.desc}</div></div>
+      <div class="shop-buy">
+        <button class="buy-btn ${equipped?'equipped':owned?'owned':''}" data-rod="${r.id}">${equipped?'장착중':owned?'장착하기':'구매'}</button>
+        <div class="price-tag tabular">${owned?'':fmt(r.price)+'P'}</div>
+      </div>`;
+    rodCard.appendChild(row);
+  });
+  wrap.appendChild(rodCard);
+
+  ['title'].forEach(kind=>{
+    wrap.appendChild(el('div','section-title',COSMETIC_KIND_LABEL[kind]));
+    const cCard = el('div','card');
+    COSMETICS.filter(c=>c.kind===kind).forEach(item=>{
+      const owned = profile.cosmetics.owned.includes(item.id);
+      const equipped = profile.cosmetics.equipped[kind]===item.id;
+      const dexLocked = !owned && titleLocked(item);
+      const row = el('div','shop-item');
+      const abilityText = item.desc || '능력치 영향 없음 · 랭킹 화면에 노출';
+      const descText = dexLocked ? `<span style="color:var(--coral);">${titleLockMsg(item)}</span><br>${abilityText}` : abilityText;
+      row.innerHTML = `
+        <div class="shop-icon">${item.glyph}</div>
+        <div class="shop-info"><div class="shop-name">${item.name}</div><div class="shop-desc">${descText}</div></div>
+        <div class="shop-buy">
+          <button class="buy-btn ${equipped?'equipped':owned?'owned':''}" data-cos="${item.id}" ${dexLocked?'disabled':''}>${equipped?'착용중':owned?'착용하기':dexLocked?'잠김':'구매'}</button>
+          <div class="price-tag tabular">${owned?'':fmt(item.price)+'P'}</div>
+        </div>`;
+      cCard.appendChild(row);
+    });
+    wrap.appendChild(cCard);
+  });
+
+  c.appendChild(wrap);
+
+  wrap.querySelectorAll('[data-id]').forEach(btn=> btn.onclick=()=> buyConsumable(btn.dataset.id));
+  wrap.querySelectorAll('[data-rod]').forEach(btn=> btn.onclick=()=> handleRod(btn.dataset.rod));
+  wrap.querySelectorAll('[data-cos]').forEach(btn=> btn.onclick=()=> handleCosmetic(btn.dataset.cos));
+}
+function buyConsumable(id){
+  const item = byId(CONSUMABLES,id);
+  if(profile.points < item.price){ toast('포인트가 부족해요'); return; }
+  profile.points -= item.price;
+  profile.consumables[item.id] = (profile.consumables[item.id]||0) + item.charges;
+  saveStore(); pushProfileToDb(); renderAll();
+  toast(item.name+' 구매 완료');
+}
+function handleRod(id){
+  const r = byId(RODS,id);
+  if(profile.ownedRods.includes(id)){
+    profile.rod = id; saveStore(); renderAll(); toast(r.name+' 장착');
+    return;
+  }
+  if(profile.points < r.price){ toast('포인트가 부족해요'); return; }
+  profile.points -= r.price; profile.ownedRods.push(id); profile.rod = id;
+  saveStore(); pushProfileToDb(); renderAll();
+  toast(r.name+' 구매 및 장착');
+}
+function handleCosmetic(id){
+  const item = byId(COSMETICS,id);
+  if(profile.cosmetics.owned.includes(id)){
+    profile.cosmetics.equipped[item.kind] = id; saveStore(); pushProfileToDb(); renderAll();
+    return;
+  }
+  if(titleLocked(item)){ toast(titleLockMsg(item)); return; }
+  if(profile.points < item.price){ toast('포인트가 부족해요'); return; }
+  profile.points -= item.price; profile.cosmetics.owned.push(id); profile.cosmetics.equipped[item.kind]=id;
+  saveStore(); pushProfileToDb(); renderAll();
+  toast(item.name+' 구매 완료');
+}
+
+/* ---------- RENDER: DEX ---------- */
+function oceanBubbles(){
+  const arr=[[8,4,0],[22,6,1.2],[38,5,2.4],[55,7,0.6],[68,4,3.1],[82,6,1.8],[92,5,2.9],[15,7,4],[45,4,1.5]];
+  return arr.map(([x,size,delay])=>`<span class="amb-bubble" style="left:${x}%; width:${size}px; height:${size}px; animation-delay:${delay}s;"></span>`).join('');
+}
+function renderDex(){
+  const c = $('#content'); c.innerHTML='';
+  const wrap = el('div');
+
+  const tabs = el('div','dex-tabs');
+  REGIONS.forEach(r=>{
+    const t = el('div','dex-tab'+(r.id===dexRegionTab?' active':''), r.name);
+    t.onclick = ()=>{ dexRegionTab=r.id; renderDex(); };
+    tabs.appendChild(t);
+  });
+  wrap.appendChild(tabs);
+
+  const ocean = el('div','dex-ocean');
+  ocean.innerHTML = `<div class="rays"></div>${oceanBubbles()}`;
+
+  const regionFish = FISH.filter(f=>f.region===dexRegionTab);
+  const mineCount = regionFish.filter(f=> profile.dex[f.id]).length;
+  const familyCount = regionFish.filter(f=> familyDexCount(f.id)>0).length;
+  const dualRow = el('div','dex-dual');
+  dualRow.innerHTML = `
+    <div class="dex-dual-item">
+      <div class="ddi-label">내 도감</div>
+      <div class="progress-track"><div class="progress-fill" style="width:${mineCount/regionFish.length*100}%"></div></div>
+      <div class="tabular">${mineCount}/${regionFish.length}</div>
+    </div>
+    <div class="dex-dual-item">
+      <div class="ddi-label">우리 가족 도감</div>
+      <div class="progress-track"><div class="progress-fill fam" style="width:${familyCount/regionFish.length*100}%"></div></div>
+      <div class="tabular">${familyCount}/${regionFish.length}</div>
+    </div>
+  `;
+  ocean.appendChild(dualRow);
+
+  const scopeRow = el('div','dex-scope-toggle');
+  scopeRow.innerHTML = `
+    <div class="pill-toggle ${dexScope==='family'?'active':''}" data-scope="family">우리 가족 도감 보기</div>
+    <div class="pill-toggle ${dexScope==='mine'?'active':''}" data-scope="mine">내 도감 보기</div>
+  `;
+  ocean.appendChild(scopeRow);
+
+  const grid = el('div','fish-grid');
+  regionFish.forEach(f=>{
+    const count = dexScope==='family' ? familyDexCount(f.id) : (profile.dex[f.id]||0);
+    const caught = count>0;
+    const card = el('div','fish-card'+(caught?'':' uncaught'));
+    card.innerHTML = `
+      <div class="grade-strip" style="background:${caught?`var(${GRADE_VAR[f.grade]})`:'rgba(255,255,255,.3)'}"></div>
+      ${caught?`<div class="fcnt tabular">${count}</div>`:''}
+      ${caught? fishIcon(f) : `<span style="display:inline-block;opacity:.6">${renderFishSVG({...FISH_ART[f.id], fb:'#7d879c', bl:'#a6afc2', fin:'#5c6478', pattern:'none', patterns:null}, f.id+'-un')}</span>`}
+      <div class="fname">${caught? f.name : '???'}</div>
+      <div class="fpts tabular">${caught? fmt(f.points)+'P' : GRADE_LABEL[f.grade]}</div>
+    `;
+    if(caught){ card.onclick = ()=> showFishDetail(f); }
+    grid.appendChild(card);
+  });
+  if(dexRegionTab==='paradise'){
+    const seen = !!profile.paradiseBaitSeen;
+    const baitCard = el('div','fish-card'+(seen?'':' uncaught'));
+    baitCard.innerHTML = `
+      <div class="grade-strip" style="background:${seen?'var(--g-primordial)':'rgba(255,255,255,.3)'}"></div>
+      ${seen? baitIconSVG() : `<span style="display:inline-block;opacity:.6">${baitIconSVG()}</span>`}
+      <div class="fname">${seen? '낙원 전용 미끼' : '???'}</div>
+      <div class="fpts tabular">${seen? '아이템' : '태초'}</div>
+    `;
+    if(seen){
+      baitCard.onclick = ()=> openSheet(`
+        <div class="catch-fish-wrap">
+          ${baitIconSVG()}
+          <h2 class="catch-name">낙원 전용 미끼</h2>
+          <div class="catch-pts tabular">현재 보유 ${profile.consumables.paradiseBait||0}개</div>
+          <div class="fact-box">호수·강·바다·심해에서 물고기를 잡을 때 확률로 함께 발견돼요. 낙원에서 낚싯줄을 던질 때마다 1개씩 소모됩니다.</div>
+        </div>
+        <button class="sheet-close" onclick="document.getElementById('modal-layer').classList.remove('show')">닫기</button>
+      `);
+    }
+    grid.appendChild(baitCard);
+  }
+  ocean.appendChild(grid);
+  wrap.appendChild(ocean);
+
+  const overallTotal = FISH.length;
+  const overallMine = FISH.filter(f=> profile.dex[f.id]).length;
+  const overallFamily = FISH.filter(f=> familyDexCount(f.id)>0).length;
+  const summary = el('div','card');
+  summary.innerHTML = `
+    <div style="font-size:13px;">전체 도감 완성도</div>
+    <div class="progress-row" style="margin-top:8px;"><div class="progress-track"><div class="progress-fill" style="width:${overallMine/overallTotal*100}%"></div></div><div class="tabular" style="font-size:12px;">내 ${overallMine}/${overallTotal}</div></div>
+    <div class="progress-row"><div class="progress-track"><div class="progress-fill fam" style="width:${overallFamily/overallTotal*100}%"></div></div><div class="tabular" style="font-size:12px;">가족 ${overallFamily}/${overallTotal}</div></div>
+  `;
+  wrap.appendChild(summary);
+
+  c.appendChild(wrap);
+  wrap.querySelectorAll('[data-scope]').forEach(b=> b.onclick=()=>{ dexScope=b.dataset.scope; renderDex(); });
+}
+function showFishDetail(f){
+  openSheet(`
+    <div class="catch-fish-wrap">
+      ${fishIcon(f)}
+      <span class="grade-chip" style="background:var(${GRADE_VAR[f.grade]})">${GRADE_LABEL[f.grade]}</span>
+      <h2 class="catch-name">${f.name}</h2>
+      <div class="catch-pts tabular">${fmt(f.points)}P · 내가 잡은 횟수 ${profile.dex[f.id]||0}회</div>
+      ${f.fact?`<div class="fact-box">${f.fact}</div>`:''}
+    </div>
+    <button class="sheet-close" onclick="document.getElementById('modal-layer').classList.remove('show')">닫기</button>
+  `);
+}
+
+/* ---------- RENDER: RANKING ---------- */
+let rankSort = 'points';
+function renderRank(){
+  const c = $('#content'); c.innerHTML='';
+  const wrap = el('div');
+
+  wrap.appendChild(el('div','section-title','우리 가족 랭킹'));
+  if(!dbAvailable){
+    const note = el('div','card'); note.style.marginBottom='12px';
+    note.innerHTML = `<div style="font-size:12.5px;color:var(--ink-soft);line-height:1.5;">지금은 이 기기에만 연결되어 있어요. 다른 가족의 기기와 실시간으로 합치려면, 모두 같은 Claude 조직(팀/기업 플랜) 계정으로 접속해야 동기화돼요. 그 전까지는 이 기기에서 가족 프로필을 나눠 써도 함께 기록할 수 있어요.</div>`;
+    wrap.appendChild(note);
+  }
+
+  const sortRow = el('div','dex-scope-toggle');
+  sortRow.innerHTML = `<div class="pill-toggle ${rankSort==='points'?'active':''}" data-sort="points">포인트</div><div class="pill-toggle ${rankSort==='dex'?'active':''}" data-sort="dex">도감 완성률</div>`;
+  wrap.appendChild(sortRow);
+
+  const members = familyMembers();
+  members.sort((a,b)=> rankSort==='points' ? b.points-a.points : b.dexCount-a.dexCount);
+  const rankCard = el('div','card');
+  members.forEach((m,i)=>{
+    const title = COSMETICS.find(c=>c.id===m.title);
+    const row = el('div','rank-row');
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    row.innerHTML = `
+      <div class="rank-num ${i<3?'top':''}">${medal}</div>
+      <div class="rank-name">${title?`<span style="font-size:9.5px;font-weight:400;color:var(--gold);background:rgba(255,206,84,.15);padding:1px 6px;border-radius:8px;">${title.name}</span>`:''}${escapeHtml(m.name)}${m.id===profile.id?' <span style="font-size:10px;color:var(--ink-soft);">(나)</span>':''}<span class="rank-sub tabular">Lv.${m.level} · 도감 ${m.dexCount}/${FISH.length}</span></div>
+      <div class="rank-val tabular">${rankSort==='points'? fmt(m.points)+'P' : m.dexCount+'종'}</div>
+    `;
+    rankCard.appendChild(row);
+  });
+  if(!members.length) rankCard.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">아직 기록이 없어요</div>';
+  wrap.appendChild(rankCard);
+
+  wrap.appendChild(el('div','section-title','최근 희귀 어종 소식'));
+  const feedCard = el('div','card');
+  const feed = combinedFeed().filter(e=> ['epic','legendary','secret','primordial'].includes(e.grade) || e.trait);
+  if(!feed.length){ feedCard.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">아직 희귀 어종 기록이 없어요</div>'; }
+  feed.slice(0,12).forEach(e=>{
+    const d = new Date(e.ts);
+    const time = (d.getMonth()+1)+'/'+d.getDate();
+    const row = el('div','feed-row');
+    const traitTxt = e.trait ? `<b>${escapeHtml(e.trait)}</b> ` : '';
+    row.innerHTML = `<div class="feed-time">${time}</div><span class="grade-chip" style="background:var(${GRADE_VAR[e.grade]})">${GRADE_LABEL[e.grade]}</span><div style="flex:1;">${escapeHtml(e.player)}님이 ${traitTxt}<b>${escapeHtml(e.fish)}</b>${e.perfect?' (완벽!)':''}</div>`;
+    feedCard.appendChild(row);
+  });
+  wrap.appendChild(feedCard);
+
+  c.appendChild(wrap);
+  wrap.querySelectorAll('[data-sort]').forEach(b=> b.onclick=()=>{ rankSort=b.dataset.sort; renderRank(); });
+}
+
+/* ---------- NAV / MAIN RENDER ---------- */
+function renderNav(){
+  document.querySelectorAll('.nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===activeTab));
+}
+function renderAll(){
+  if(!profile){ ensureProfile(); return; }
+  renderTopbar();
+  if(activeTab==='fish') renderFish();
+  else if(activeTab==='shop') renderShop();
+  else if(activeTab==='dex') renderDex();
+  else if(activeTab==='rank') renderRank();
+  renderNav();
+}
+document.querySelectorAll('.nav-btn').forEach(b=> b.onclick=()=>{
+  if((castState==='biting' || castState==='waiting') && b.dataset.tab!=='fish') return;
+  activeTab = b.dataset.tab; renderAll();
+});
+$('#avatar-btn').onclick = ()=>{ if(profile) openProfileSwitcher(); };
+$('#content').addEventListener('click', (e)=>{
+  const id = e.target && e.target.id;
+  if(id==='cast-btn') startCast();
+  else if(id==='hook-btn') doHook();
+  else if(id==='odds-btn') showOdds();
+});
+
+/* ---------- BOOT ---------- */
+renderAll();
+initDb();
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+})();
+</script>
