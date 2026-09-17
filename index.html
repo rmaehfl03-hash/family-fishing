@@ -57,8 +57,9 @@ button{ font-family:inherit; }
 #who-name{ font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px; }
 #title-tag{ font-size:9.5px; font-weight:400; color:var(--gold); background:rgba(255,206,84,.15); padding:1px 6px; border-radius:8px; }
 #title-tag:empty{ display:none; }
-#sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--ink-soft); flex-shrink:0; }
+#sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--ink-soft); flex-shrink:0; display:block; }
 #sync-dot.on{ background:var(--teal); box-shadow:0 0 0 3px rgba(79,214,196,.25); }
+#sync-dot-btn{ background:none; border:none; padding:4px; margin:-4px 0 -4px -4px; cursor:pointer; display:inline-flex; align-items:center; }
 #lv-row{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-soft); margin-top:2px; }
 #exp-track{ flex:1; height:5px; background:rgba(255,255,255,.08); border-radius:3px; overflow:hidden; }
 #exp-fill{ height:100%; background:linear-gradient(90deg, var(--gold), var(--coral)); border-radius:3px; transition:width .4s; }
@@ -275,7 +276,7 @@ button{ font-family:inherit; }
     <div id="topbar-row">
       <button id="avatar-btn"></button>
       <div id="who">
-        <div id="who-name"><span id="sync-dot"></span><span id="name-text">-</span><span id="title-tag"></span></div>
+        <div id="who-name"><button id="sync-dot-btn"><span id="sync-dot"></span></button><span id="name-text">-</span><span id="title-tag"></span></div>
         <div id="lv-row"><span id="lv-text" class="tabular">Lv.1</span><div id="exp-track"><div id="exp-fill" style="width:0%"></div></div></div>
       </div>
       <div id="points-box">
@@ -300,9 +301,24 @@ button{ font-family:inherit; }
 <div class="celebrate" id="celebrate"><div class="celebrate-card" id="celebrate-card"></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 <script>
 (function(){
 "use strict";
+
+/* ---------- FIREBASE (가족 실시간 공유) ----------
+   1) https://console.firebase.google.com 에서 무료 프로젝트 생성
+   2) 왼쪽 메뉴 Build > Firestore Database > 데이터베이스 만들기 (테스트 모드로 시작)
+   3) 프로젝트 설정(톱니바퀴) > 일반 > 내 앱 > </> 웹 앱 추가 > 아래 값 붙여넣기 */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAI8TyNxyHrhcwn7BoM7d5F5D3vmtKGQYo",
+  authDomain: "family-fishing-8b15d.firebaseapp.com",
+  projectId: "family-fishing-8b15d",
+  storageBucket: "family-fishing-8b15d.firebasestorage.app",
+  messagingSenderId: "671467818372",
+  appId: "1:671467818372:web:4a6128eb768445c3dd21d1"
+};
 
 /* ---------- DATA ---------- */
 const REGIONS = [
@@ -1030,33 +1046,50 @@ function pushLocalFeed(entry){
   try{ localStorage.setItem('fishlog_feed_v1', JSON.stringify(localFeed)); }catch(e){}
 }
 
-/* ---------- DB SYNC (best-effort family share) ---------- */
+/* ---------- DB SYNC (Firebase, family-code scoped) ---------- */
 let db = null, dbAvailable = false;
 let familyPlayers = [], familyState = {dex:{}, feed:[]};
+let dbUnsubs = [];
+
+function familyCode(){ return (store.familyCode||'').trim().toUpperCase(); }
+function genFamilyCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s=''; for(let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+function setFamilyCode(code){
+  store.familyCode = code.trim().toUpperCase();
+  saveStore();
+  initDb();
+}
 
 async function initDb(){
-  try{ db = await claude.use('db'); }catch(e){ db = null; }
-  dbAvailable = !!db;
-  renderSyncDot();
-  if(dbAvailable){
-    try{
-      db.collection('players').onSnapshot(snap=>{
-        familyPlayers = snap.docs.map(d=>({id:d.id, ...d.data()}));
-        renderRankIfActive(); renderDexIfActive();
-      }, ()=>{ dbAvailable=false; renderSyncDot(); });
-      db.doc('family/state').onSnapshot(snap=>{
-        familyState = snap.exists ? snap.data() : {dex:{}, feed:[]};
-        familyState.dex = familyState.dex || {}; familyState.feed = familyState.feed || [];
-        renderRankIfActive(); renderDexIfActive();
-      }, ()=>{ dbAvailable=false; renderSyncDot(); });
-      pushProfileToDb();
-    }catch(e){ dbAvailable=false; renderSyncDot(); }
-  }
+  dbUnsubs.forEach(u=>{ try{ u(); }catch(e){} }); dbUnsubs=[];
+  familyPlayers = []; familyState = {dex:{}, feed:[]};
+  db = null; dbAvailable = false;
+  if(!familyCode() || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY'){ renderSyncDot(); return; }
+  try{
+    const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore(app);
+    dbAvailable = true;
+    renderSyncDot();
+    const fam = familyCode();
+    dbUnsubs.push(db.collection('families/'+fam+'/players').onSnapshot(snap=>{
+      familyPlayers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderRankIfActive(); renderDexIfActive();
+    }, ()=>{ dbAvailable=false; renderSyncDot(); }));
+    dbUnsubs.push(db.doc('families/'+fam+'/meta/state').onSnapshot(snap=>{
+      familyState = snap.exists ? snap.data() : {dex:{}, feed:[]};
+      familyState.dex = familyState.dex || {}; familyState.feed = familyState.feed || [];
+      renderRankIfActive(); renderDexIfActive();
+    }, ()=>{ dbAvailable=false; renderSyncDot(); }));
+    pushProfileToDb();
+  }catch(e){ dbAvailable=false; renderSyncDot(); }
 }
 async function pushProfileToDb(){
   if(!dbAvailable || !profile) return;
   try{
-    await db.collection('players').doc(profile.id).set({
+    await db.collection('families/'+familyCode()+'/players').doc(profile.id).set({
       name:profile.name, points:profile.points, totalExp:profile.totalExp,
       level:expProgress(profile.totalExp).level, dexCount:Object.keys(profile.dex).length,
       title: profile.cosmetics.equipped.title, updatedAt: Date.now()
@@ -1066,7 +1099,7 @@ async function pushProfileToDb(){
 async function pushCatchToFamily(fish, grade, points, perfect, traits){
   if(!dbAvailable) return;
   try{
-    const ref = db.doc('family/state');
+    const ref = db.doc('families/'+familyCode()+'/meta/state');
     const snap = await ref.get();
     const data = snap.exists ? (snap.data()||{}) : {};
     const dex = data.dex || {};
@@ -1080,7 +1113,35 @@ function renderSyncDot(){
   const dot = $('#sync-dot');
   if(!dot) return;
   dot.classList.toggle('on', dbAvailable);
-  dot.title = dbAvailable ? '가족과 실시간 공유 중' : '이 기기에만 저장됨';
+  dot.title = dbAvailable ? '가족과 실시간 공유 중 (코드 '+familyCode()+')' : (familyCode() ? '연결 안 됨' : '가족 코드 없음 · 눌러서 설정');
+}
+function showFamilyCodeSheet(){
+  const cur = familyCode();
+  openSheet(`
+    <h2>가족 코드</h2>
+    <div class="sub">${cur ? `현재 코드 <b style="color:var(--gold);letter-spacing:.06em;">${cur}</b> 로 연결됨 ${dbAvailable?'· 실시간 공유 중':'· 연결 안 됨'}` : '가족과 같은 코드를 쓰면 랭킹·도감이 실시간으로 공유돼요.'}</div>
+    <div class="section-title" style="margin-top:18px;">코드 만들기</div>
+    <div class="sub">새 코드를 만들어서 가족에게 알려주세요.</div>
+    <button class="big-btn" id="fc-create" style="margin-top:8px;">새 코드 만들기</button>
+    <div class="section-title" style="margin-top:18px;">코드로 참여하기</div>
+    <div class="sub">가족이 만든 코드를 입력하세요.</div>
+    <input type="text" id="fc-input" placeholder="예: AB12CD" maxlength="6" style="text-transform:uppercase;" value="${cur}">
+    <button class="sheet-close" id="fc-join" style="margin-top:10px;">이 코드로 참여</button>
+  `);
+  $('#fc-create').onclick = ()=>{
+    const code = genFamilyCode();
+    setFamilyCode(code);
+    toast('새 코드: '+code+' (가족에게 알려주세요)');
+    closeSheet();
+    renderAll();
+  };
+  $('#fc-join').onclick = ()=>{
+    const v = $('#fc-input').value.trim();
+    if(!v){ toast('코드를 입력해주세요'); return; }
+    setFamilyCode(v);
+    closeSheet();
+    renderAll();
+  };
 }
 
 function familyMembers(){
@@ -1936,6 +1997,7 @@ document.querySelectorAll('.nav-btn').forEach(b=> b.onclick=()=>{
   activeTab = b.dataset.tab; renderAll();
 });
 $('#avatar-btn').onclick = ()=>{ if(profile) openProfileSwitcher(); };
+$('#sync-dot-btn').onclick = showFamilyCodeSheet;
 $('#content').addEventListener('click', (e)=>{
   const id = e.target && e.target.id;
   if(id==='cast-btn') startCast();
